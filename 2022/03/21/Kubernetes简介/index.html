@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/pawprint.png">
+  <link rel="mask-icon" href="/images/pawprint.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"hannokishi.link","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="kubernetes，简称K8s，是用8代替名字中间的8个字符“ubernete”而成的缩写。是一个开源的，用于管理云平台中多个主机上的容器化的应用，Kubernetes的目标是让部署容器化的应用简单并且高效（powerful）,Kubernetes提供了应用部署，规划，更新，维护的一种机制。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes简介">
+<meta property="og:url" content="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/index.html">
+<meta property="og:site_name" content="硝子の少年">
+<meta property="og:description" content="kubernetes，简称K8s，是用8代替名字中间的8个字符“ubernete”而成的缩写。是一个开源的，用于管理云平台中多个主机上的容器化的应用，Kubernetes的目标是让部署容器化的应用简单并且高效（powerful）,Kubernetes提供了应用部署，规划，更新，维护的一种机制。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319000957.png">
+<meta property="og:image" content="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319001803.png">
+<meta property="og:image" content="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319193746.png">
+<meta property="article:published_time" content="2022-03-20T23:28:14.000Z">
+<meta property="article:modified_time" content="2022-03-20T23:28:14.000Z">
+<meta property="article:author" content="Hannokishi">
+<meta property="article:tag" content="容器">
+<meta property="article:tag" content="docker">
+<meta property="article:tag" content="kubernetes">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319000957.png">
+
+<link rel="canonical" href="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Kubernetes简介 | 硝子の少年</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">硝子の少年</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">些細な話</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/hannokishi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Hannokishi">
+      <meta itemprop="description" content="一切合切放り出したい">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="硝子の少年">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kubernetes简介
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-03-20 23:28:14" itemprop="dateCreated datePublished" datetime="2022-03-20T23:28:14Z">2022-03-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AE%B9%E5%99%A8/" itemprop="url" rel="index"><span itemprop="name">容器</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AE%B9%E5%99%A8/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<p>kubernetes，简称K8s，是用8代替名字中间的8个字符“ubernete”而成的缩写。是一个开源的，用于管理云平台中多个主机上的容器化的应用，Kubernetes的目标是让部署容器化的应用简单并且高效（powerful）,Kubernetes提供了应用部署，规划，更新，维护的一种机制。</p>
+<span id="more"></span>
+
+<!-- toc -->
+
+
+<p>[toc]</p>
+<p><a target="_blank" rel="noopener" href="https://k8s.easydoc.net/docs/dRiQjyTY/28366845/6GiNOzyZ/9EX8Cp45">参考资料</a></p>
+<h2 id="K8S是什么"><a href="#K8S是什么" class="headerlink" title="K8S是什么"></a>K8S是什么</h2><p>它是一个为 <strong>容器化</strong> 应用提供集群部署和管理的开源工具，由 Google 开发。</p>
+<h3 id="K8S框架"><a href="#K8S框架" class="headerlink" title="K8S框架"></a>K8S框架</h3><p><img src="/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319000957.png" alt="K8S框架"></p>
+<ul>
+<li>master: 主节点，控制平台，不需要很高性能，不跑任务，通常一个就行了，也可以开多个主节点来提高集群可用度。</li>
+<li>slave: 工作节点，可以是虚拟机或物理计算机，任务都在这里跑，机器性能需要好点；通常都有很多个，可以不断加机器扩大集群；每个工作节点由主节点管理</li>
+<li>pod: 豆荚，K8S 调度、管理的最小单位，一个 Pod 可以包含一个或多个容器，每个 Pod 有自己的虚拟IP。</li>
+</ul>
+<h3 id="K8S组件"><a href="#K8S组件" class="headerlink" title="K8S组件"></a>K8S组件</h3><ul>
+<li><code>kube-apiserver</code> API 服务器，公开了 Kubernetes API  </li>
+<li><code>etcd</code> 键值数据库，可以作为保存 Kubernetes 所有集群数据的后台数据库  </li>
+<li><code>kube-scheduler</code> 调度 Pod 到哪个节点运行  </li>
+<li><code>kube-controller</code> 集群控制器  </li>
+<li><code>cloud-controller</code> 与云服务商交互</li>
+</ul>
+<p><img src="/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319001803.png" alt="K8S组件图"></p>
+<h2 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h2><p>这里我使用三台devcloud开发机</p>
+<ul>
+<li>编辑/etc/hosts</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">9.134.165.72 master</span><br><span class="line">9.135.119.203 node1</span><br><span class="line">9.135.144.179 node2</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>每台机子安装相应的软件<ul>
+<li><code>docker-ce</code>: docker</li>
+<li>kubelet: </li>
+<li>kubeadm</li>
+<li>kubectl: 集群控制器</li>
+</ul>
+</li>
+</ul>
+<p>这里要设置kubernetes的镜像源是腾讯云，tx好🐶啊</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo</span><br><span class="line">[kubernetes]</span><br><span class="line">name=Kubernetes</span><br><span class="line">baseurl=http://mirrors.tencent.com/kubernetes/yum/repos/kubernetes-el7-x86_64</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=0</span><br><span class="line">repo_gpgcheck=0</span><br><span class="line">gpgkey=http://mirrors.tencent.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<ul>
+<li>shell命令<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y kubelet kubeadm kubectl docker-ce</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="主节点kubeadm初始化"><a href="#主节点kubeadm初始化" class="headerlink" title="主节点kubeadm初始化"></a>主节点kubeadm初始化</h3><ul>
+<li><p>kubeadm init</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init --image-repository=registry.aliyuncs.com/google_containers</span><br></pre></td></tr></table></figure></li>
+<li><p>输出join命令行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join 9.134.165.72:6443 --token 7z5l51.ehxdba3ie7zrit6i \</span><br><span class="line">        --discovery-token-ca-cert-hash sha256:b7616fe77ba3d4b14bc8ba7e6b65d37b43ed69d9e012d18b9753df227337e8d0 </span><br><span class="line"></span><br><span class="line">// </span><br><span class="line"><span class="meta">#</span><span class="bash"> 记得把 kubeadm join xxx 保存起来 <span class="comment"># 忘记了重新获取：kubeadm token create --print-join-command</span></span></span><br></pre></td></tr></table></figure></li>
+<li><p>复制授权文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 复制授权文件，以便 kubectl 可以有权限访问集群 <span class="comment"># 如果你其他节点需要访问集群，需要从主节点复制这个文件过去其他节点</span></span> </span><br><span class="line">mkdir -p $HOME/.kube </span><br><span class="line">cp -i /etc/kubernetes/admin.conf $HOME/.kube/config </span><br><span class="line">chown $(id -u):$(id -g) $HOME/.kube/config</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="工作节点加入集群"><a href="#工作节点加入集群" class="headerlink" title="工作节点加入集群"></a>工作节点加入集群</h3><ul>
+<li>使用join的token (去掉换行符)<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join 9.134.165.72:6443 --token 7z5l51.ehxdba3ie7zrit6i --discovery-token-ca-cert-hash sha256:b7616fe77ba3d4b14bc8ba7e6b65d37b43ed69d9e012d18b9753df227337e8d0 </span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="控制主机查看cluster"><a href="#控制主机查看cluster" class="headerlink" title="控制主机查看cluster"></a>控制主机查看cluster</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl get nodes</span><br><span class="line">NAME     STATUS     ROLES                  AGE     VERSION</span><br><span class="line">master   NotReady   control-plane,master   8m37s   v1.23.5</span><br><span class="line">node1    NotReady   &lt;none&gt;                 62s     v1.23.5</span><br><span class="line">node2    NotReady   &lt;none&gt;                 49s     v1.23.5</span><br></pre></td></tr></table></figure>
+<p>可以看到三台机器的集群</p>
+<h3 id="安装网络插件"><a href="#安装网络插件" class="headerlink" title="安装网络插件"></a>安装网络插件</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>进入ready状态<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl get nodes</span><br><span class="line">NAME     STATUS   ROLES                  AGE     VERSION</span><br><span class="line">master   Ready    control-plane,master   11m     v1.23.5</span><br><span class="line">node1    Ready    &lt;none&gt;                 4m5s    v1.23.5</span><br><span class="line">node2    Ready    &lt;none&gt;                 3m52s   v1.23.5</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="部署应用"><a href="#部署应用" class="headerlink" title="部署应用"></a>部署应用</h2><p><a target="_blank" rel="noopener" href="https://github.com/HannoKishi/gin-docker-learning/tree/k8s">项目地址</a><br>ps: 使用k8s分支,<br>然后要住要镜像的cpu构架v2是arm，v3是x86</p>
+<h3 id="pod文件"><a href="#pod文件" class="headerlink" title="pod文件"></a>pod文件</h3><ul>
+<li><p>eg pod.yaml</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span> <span class="comment">#指定api版本，此值必须在kubectl apiversion中  </span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span> <span class="comment">#指定创建资源的角色/类型  </span></span><br><span class="line"><span class="attr">metadata:</span> <span class="comment">#资源的元数据/属性  </span></span><br><span class="line"> <span class="attr">name:</span> <span class="string">test-k8s</span> <span class="comment">#资源的名字，在同一个namespace中必须唯一  </span></span><br><span class="line"><span class="attr">spec:</span>  </span><br><span class="line">  <span class="comment"># 定义容器，可以多个  </span></span><br><span class="line"> <span class="attr">containers:</span>  </span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">test-k8s</span> <span class="comment"># 容器名字  </span></span><br><span class="line"> <span class="attr">image:</span> <span class="string">ccr.ccs.tencentyun.com/hannokishi/k8s-test:v2</span> <span class="comment"># 镜像地址</span></span><br></pre></td></tr></table></figure></li>
+<li><p>minikube使用该yaml创建一个pod</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 命令</span></span><br><span class="line">kubectl apply -f ./pod.yaml</span><br><span class="line"><span class="meta">#</span><span class="bash"> 输出</span></span><br><span class="line">pod/test-k8s created</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看</span></span><br><span class="line">kubectl get pod</span><br><span class="line"><span class="meta">#</span><span class="bash"> 结果</span></span><br><span class="line">NAME       READY   STATUS             RESTARTS      AGE</span><br><span class="line">test-k8s   0/1     CrashLoopBackOff   4 (42s ago)   2m23s</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="直接使用镜像地址创建pod"><a href="#直接使用镜像地址创建pod" class="headerlink" title="直接使用镜像地址创建pod"></a>直接使用镜像地址创建pod</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 命令</span></span><br><span class="line">kubectl run testapp --image=ccr.ccs.tencentyun.com/hannokishi/k8s-test:v3</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看</span></span><br><span class="line">kubectl get pod</span><br><span class="line">NAME       READY   STATUS    RESTARTS   AGE</span><br><span class="line">test-k8s   1/1     Running   0          13s</span><br><span class="line">testapp    1/1     Running   0          8s</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除pod</span></span><br><span class="line">kubectl delete pod podname</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="deployment文件"><a href="#deployment文件" class="headerlink" title="deployment文件"></a>deployment文件</h3><p>eg: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1  </span><br><span class="line">kind: Deployment  </span><br><span class="line">metadata:  </span><br><span class="line"><span class="meta">  #</span><span class="bash"> 部署名字</span>  </span><br><span class="line"> name: test-k8s  </span><br><span class="line">spec:  </span><br><span class="line"><span class="meta">  #</span><span class="bash"> 声明副本数目</span>  </span><br><span class="line"> replicas: 5  </span><br><span class="line"><span class="meta">  #</span><span class="bash"> 用来查找关联的 Pod，所有标签都匹配才行</span>  </span><br><span class="line"><span class="meta">  #</span><span class="bash"> 关联pod，通过标签 <span class="comment"># 选择器 selector:</span></span>  </span><br><span class="line">    matchLabels:  </span><br><span class="line">      app: test-k8s  </span><br><span class="line"><span class="meta">  #</span><span class="bash"> 定义 Pod 相关数据</span>  </span><br><span class="line"> template:  </span><br><span class="line">    metadata:  </span><br><span class="line">      labels:  </span><br><span class="line">        app: test-k8s  </span><br><span class="line">    spec:  </span><br><span class="line">      # 定义容器，可以多个  </span><br><span class="line"> containers:  </span><br><span class="line">        # 容器名字  </span><br><span class="line"> - name: test-k8s  </span><br><span class="line">          # 镜像路径  </span><br><span class="line"> image: ccr.ccs.tencentyun.com/hannokishi/k8s-test:v3</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>部署与查看<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 部署</span></span><br><span class="line">kubectl apply -f ./app.yaml</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看</span></span><br><span class="line">kubectl get deployment                                                 </span><br><span class="line">NAME       READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">test-k8s   2/2     2            0           16s</span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除deployment</span></span><br><span class="line">kubectl delete deployment dplname</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="部署后控制命令演示"><a href="#部署后控制命令演示" class="headerlink" title="部署后控制命令演示"></a>部署后控制命令演示</h2><ul>
+<li>部署应用<ul>
+<li>kubectl apply -f app.yaml</li>
+</ul>
+</li>
+<li>查看 deployment<ul>
+<li>kubectl get deployment</li>
+</ul>
+</li>
+<li>查看 pod<ul>
+<li>kubectl get pod -o wide</li>
+</ul>
+</li>
+<li>查看 pod 详情<ul>
+<li>kubectl describe pod pod-name</li>
+</ul>
+</li>
+<li>查看 log<ul>
+<li>kubectl logs pod-name</li>
+<li>kubectl logs pod-name -f</li>
+</ul>
+</li>
+<li>进入 Pod 容器终端， -c container-name 可以指定进入哪个容器。<ul>
+<li>kubectl exec -it pod-name – bash</li>
+<li>kubectl exec -it pod-name – sh</li>
+</ul>
+</li>
+<li>伸缩扩展副本 (可增可减)<ul>
+<li>kubectl scale deployment test-k8s –replicas=5</li>
+</ul>
+</li>
+<li>把集群内端口映射到节点 (可以访问服务了)<ul>
+<li>kubectl port-forward pod-name 8082:8081</li>
+</ul>
+</li>
+<li>查看历史<ul>
+<li>kubectl rollout history deployment test-k8s</li>
+</ul>
+</li>
+<li>回到上个版本<ul>
+<li>kubectl rollout undo deployment test-k8s</li>
+</ul>
+</li>
+<li>回到指定版本<ul>
+<li>kubectl rollout undo deployment test-k8s –to-revision=2</li>
+</ul>
+</li>
+<li>删除部署<ul>
+<li>kubectl delete deployment test-k8s</li>
+</ul>
+</li>
+</ul>
+<h3 id="查看详细信息"><a href="#查看详细信息" class="headerlink" title="查看详细信息"></a>查看详细信息</h3><p>使用<code>kubectl get pod -o wide</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">NAME                        READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES</span><br><span class="line">test-k8s                    1/1     Running   0          30m   172.17.0.3   minikube   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">test-k8s-685466c884-4v6x9   1/1     Running   0          19m   172.17.0.6   minikube   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">test-k8s-685466c884-rx5q5   1/1     Running   0          19m   172.17.0.5   minikube   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">testapp                     1/1     Running   0          30m   172.17.0.4   minikube   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+<p>可以查看ip，由于使用的是minikube，所以跑的都是一个节点</p>
+<h3 id="端口映射"><a href="#端口映射" class="headerlink" title="端口映射"></a>端口映射</h3><p>使用 <code>kubectl port-forward pod-name 8082:8081</code> 将某个pod的端口映射出来<br>然后访问<code>http://localhost:8082/name</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;<span class="attr">&quot;elapsedTime/ms&quot;</span>:<span class="number">0</span>,<span class="attr">&quot;hostname&quot;</span>:<span class="string">&quot;test-k8s&quot;</span>,<span class="attr">&quot;method&quot;</span>:<span class="string">&quot;GET&quot;</span>&#125;</span><br></pre></td></tr></table></figure>
+<p>可以得到该pod里面容器的主机名字，说明api调用成功</p>
+<h3 id="实机演示"><a href="#实机演示" class="headerlink" title="实机演示"></a>实机演示</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看全部</span></span><br><span class="line">kubectl get all</span><br><span class="line"><span class="meta">#</span><span class="bash"> 重新部署</span></span><br><span class="line">kubectl rollout restart deployment test-k8s</span><br><span class="line"><span class="meta">#</span><span class="bash"> 命令修改镜像，--record 表示把这个命令记录到操作历史中</span></span><br><span class="line">kubectl set image deployment test-k8s test-k8s=ccr.ccs.tencentyun.com/k8s-tutorial/test-k8s:v2-with-error --record</span><br><span class="line"><span class="meta">#</span><span class="bash"> 暂停运行，暂停后，对 deployment 的修改不会立刻生效，恢复后才应用设置</span></span><br><span class="line">kubectl rollout pause deployment test-k8s</span><br><span class="line"><span class="meta">#</span><span class="bash"> 恢复</span></span><br><span class="line">kubectl rollout resume deployment test-k8s</span><br><span class="line"><span class="meta">#</span><span class="bash"> 配置信息输出到文件</span></span><br><span class="line">kubectl get deployment test-k8s -o yaml &gt;&gt; app2.yaml</span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除全部资源</span></span><br><span class="line">kubectl delete all --all</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="工作负载分类"><a href="#工作负载分类" class="headerlink" title="工作负载分类"></a>工作负载分类</h2><ul>
+<li>Deployment<br>  适合无状态应用，所有pod等价，可替代</li>
+<li>StatefulSet<br>  有状态的应用，适合数据库这种类型。</li>
+<li>DaemonSet<br>  在每个节点上跑一个 Pod，可以用来做节点监控、节点日志收集等</li>
+<li>Job &amp; CronJob<br>  Job 用来表达的是一次性的任务，而 CronJob 会根据其时间规划反复运行。</li>
+</ul>
+<h2 id="Service"><a href="#Service" class="headerlink" title="Service"></a>Service</h2><h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>  Service 通过 label 关联对应的 Pod</li>
+<li>  Servcie 生命周期不跟 Pod 绑定，不会因为 Pod 重创改变 IP</li>
+<li>  提供了负载均衡功能，自动转发流量到不同 Pod</li>
+<li>  可对集群外部提供访问端口</li>
+<li>  集群内部可通过服务名字访问<br><img src="/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/20220319193746.png"></li>
+</ul>
+<h3 id="service的yaml配置"><a href="#service的yaml配置" class="headerlink" title="service的yaml配置"></a>service的yaml配置</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span>  </span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span>  </span><br><span class="line"><span class="attr">metadata:</span>  </span><br><span class="line">  <span class="attr">name:</span> <span class="string">test-k8s</span>  </span><br><span class="line"><span class="attr">spec:</span>  </span><br><span class="line">  <span class="attr">selector:</span>  </span><br><span class="line">    <span class="attr">app:</span> <span class="string">test-k8s</span>  </span><br><span class="line">  <span class="comment"># 默认 ClusterIP 集群内可访问，NodePort 节点可访问，LoadBalancer 负载均衡模式（需要负载均衡器才可用）  </span></span><br><span class="line"> <span class="attr">type:</span> <span class="string">NodePort</span>  </span><br><span class="line">  <span class="attr">ports:</span>  </span><br><span class="line">    <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">8080</span>        <span class="comment"># 本 Service 的端口  </span></span><br><span class="line">	   <span class="attr">targetPort:</span> <span class="number">8081</span>  <span class="comment"># 容器端口  </span></span><br><span class="line">      <span class="attr">nodePort:</span> <span class="number">31000</span>   <span class="comment"># 节点端口，范围固定 30000 ~ 32767</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>应用配置 <code>kubectl apply -f service.yaml</code></p>
+<ul>
+<li>服务的默认类型是<code>ClusterIP</code>，只能在集群内部访问，我们可以进入到 Pod 里面访问：</li>
+<li><code>对外暴露服务</code>:上面我们是通过端口转发的方式可以在外面访问到集群里的服务，如果想要直接把集群服务暴露出来，我们可以使用<code>NodePort</code> 和 <code>Loadbalancer</code> 类型的 Service</li>
+</ul>
+<h2 id="StatefulSet-有状态的服务"><a href="#StatefulSet-有状态的服务" class="headerlink" title="StatefulSet 有状态的服务"></a>StatefulSet 有状态的服务</h2><h3 id="什么是-StatefulSet"><a href="#什么是-StatefulSet" class="headerlink" title="什么是 StatefulSet"></a>什么是 StatefulSet</h3><p>StatefulSet 是用来管理有状态的应用，例如数据库。</p>
+<ul>
+<li><p>yaml配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span>  </span><br><span class="line"><span class="attr">kind:</span> <span class="string">StatefulSet</span>  </span><br><span class="line"><span class="attr">metadata:</span>  </span><br><span class="line">  <span class="attr">name:</span> <span class="string">mongodb</span>  </span><br><span class="line"><span class="attr">spec:</span>  </span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span>  </span><br><span class="line">  <span class="attr">selector:</span>  </span><br><span class="line">    <span class="attr">matchLabels:</span>  </span><br><span class="line">      <span class="attr">app:</span> <span class="string">mongodb</span>  </span><br><span class="line">  <span class="attr">serviceName:</span> <span class="string">mongodb</span>  </span><br><span class="line">  <span class="attr">template:</span>  </span><br><span class="line">    <span class="attr">metadata:</span>  </span><br><span class="line">      <span class="attr">labels:</span>  </span><br><span class="line">        <span class="attr">app:</span> <span class="string">mongodb</span>  </span><br><span class="line">    <span class="attr">spec:</span>  </span><br><span class="line">      <span class="attr">containers:</span>  </span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">mongo</span>  </span><br><span class="line">          <span class="attr">image:</span> <span class="string">mongo:4.4</span>  </span><br><span class="line">          <span class="comment"># IfNotPresent 仅本地没有镜像时才远程拉，Always 永远都是从远程拉，Never 永远只用本地镜像，本地没有则报错  </span></span><br><span class="line"> <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span>  </span><br><span class="line"><span class="meta">---  </span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span>  </span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span>  </span><br><span class="line"><span class="attr">metadata:</span>  </span><br><span class="line">  <span class="attr">name:</span> <span class="string">mongodb</span>  </span><br><span class="line"><span class="attr">spec:</span>  </span><br><span class="line">  <span class="attr">selector:</span>  </span><br><span class="line">    <span class="attr">app:</span> <span class="string">mongodb</span>  </span><br><span class="line">  <span class="attr">type:</span> <span class="string">ClusterIP</span>  </span><br><span class="line">  <span class="comment"># HeadLess  </span></span><br><span class="line"> <span class="attr">clusterIP:</span> <span class="string">None</span>  </span><br><span class="line">  <span class="attr">ports:</span>  </span><br><span class="line">    <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">27017</span>  </span><br><span class="line">      <span class="attr">targetPort:</span> <span class="number">27017</span></span><br></pre></td></tr></table></figure></li>
+<li><p><code>kubectl apply -f mongo.yaml</code>启动statefulset服务</p>
+</li>
+<li><p><code>kubectl get pod</code>查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">NAME                        READY   STATUS    RESTARTS   AGE</span><br><span class="line">mongodb-0                   1/1     Running   0          2m37s</span><br><span class="line">mongodb-1                   1/1     Running   0          60s</span><br><span class="line">mongodb-2                   1/1     Running   0          59s</span><br></pre></td></tr></table></figure></li>
+<li><p><code>kubectl get svc</code>查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AGE</span><br><span class="line">kubernetes   ClusterIP   10.96.0.1    &lt;none&gt;        443/TCP     46h</span><br><span class="line">mongodb      ClusterIP   None         &lt;none&gt;        27017/TCP   3m1s</span><br></pre></td></tr></table></figure></li>
+<li><p>连接指定pod: <code>pod-name.service-name</code></p>
+<ul>
+<li>pod-name.service-name相当于是hostname</li>
+<li><code>mongodb --host mongodb-0.mongodb</code>来访问</li>
+</ul>
+</li>
+</ul>
+<h3 id="Web-应用连接-Mongodb"><a href="#Web-应用连接-Mongodb" class="headerlink" title="Web 应用连接 Mongodb"></a>Web 应用连接 Mongodb</h3><p>在<code>集群内部</code>，我们可以通过服务名字访问到不同的服务<br>指定连接第一个：<code>mongodb-0.mongodb</code></p>
+<h2 id="数据持久化"><a href="#数据持久化" class="headerlink" title="数据持久化"></a>数据持久化</h2><p>kubernetes 集群不会为你处理数据的存储，我们可以为数据库挂载一个磁盘来确保数据的安全。<br>你可以选择云存储、本地磁盘、NFS。</p>
+<ul>
+<li>  本地磁盘：可以挂载某个节点上的目录，但是这需要限定 pod 在这个节点上运行</li>
+<li>  云存储：不限定节点，不受集群影响，安全稳定；需要云服务商提供，裸机集群是没有的。</li>
+<li>  NFS：不限定节点，不受集群影响</li>
+</ul>
+<h3 id="Storage-Class-SC"><a href="#Storage-Class-SC" class="headerlink" title="Storage Class (SC)"></a>Storage Class (SC)</h3><p>将存储卷划分为不同的种类，例如：SSD，普通磁盘，本地磁盘，按需使用。</p>
+<h4 id="Persistent-Volume-PV"><a href="#Persistent-Volume-PV" class="headerlink" title="Persistent Volume (PV)"></a>Persistent Volume (PV)</h4><p>描述卷的具体信息，例如磁盘大小</p>
+<h3 id="Persistent-Volume-Claim-PVC"><a href="#Persistent-Volume-Claim-PVC" class="headerlink" title="Persistent Volume Claim (PVC)"></a>Persistent Volume Claim (PVC)</h3><p>对存储需求的一个申明，可以理解为一个申请单，系统根据这个申请单去找一个合适的 PV<br>还可以根据 PVC 自动创建 PV。</p>
+<h2 id="ConfigMap-amp-Secret"><a href="#ConfigMap-amp-Secret" class="headerlink" title="ConfigMap &amp; Secret"></a>ConfigMap &amp; Secret</h2><p>数据库连接地址，这种可能根据部署环境变化的，我们不应该写死在代码里。<br>Kubernetes 为我们提供了 ConfigMap，可以方便的配置一些变量。</p>
+<h3 id="ConfigMap"><a href="#ConfigMap" class="headerlink" title="ConfigMap"></a>ConfigMap</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="comment"># 名字</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">mongo-config</span></span><br><span class="line"><span class="comment"># 数据</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">mongoHost:</span> <span class="string">mongodb-0.mongodb</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Secret"><a href="#Secret" class="headerlink" title="Secret"></a>Secret</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Secret</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">mongo-secret</span></span><br><span class="line"><span class="comment"># Opaque 用户定义的任意数据，更多类型介绍 https://kubernetes.io/zh/docs/concepts/configuration/secret/#secret-types</span></span><br><span class="line"><span class="attr">type:</span> <span class="string">Opaque</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="comment"># 数据要 base64。https://tools.fun/base64.html</span></span><br><span class="line">  <span class="attr">mongo-username:</span> <span class="string">bW9uZ291c2Vy</span></span><br><span class="line">  <span class="attr">mongo-password:</span> <span class="string">bW9uZ29wYXNz</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><p>作为环境变量放到yaml</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">StatefulSet</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">mongodb</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">mongodb</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">mongodb</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">mongo</span></span><br><span class="line">          <span class="attr">image:</span> <span class="string">mongo:4.4</span></span><br><span class="line">          <span class="comment"># IfNotPresent 仅本地没有镜像时才远程拉，Always 永远都是从远程拉，Never 永远只用本地镜像，本地没有则报错</span></span><br><span class="line">          <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">          <span class="attr">env:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">MONGO_INITDB_ROOT_USERNAME</span></span><br><span class="line">            <span class="attr">valueFrom:</span></span><br><span class="line">              <span class="attr">secretKeyRef:</span></span><br><span class="line">                <span class="attr">name:</span> <span class="string">mongo-secret</span></span><br><span class="line">                <span class="attr">key:</span> <span class="string">mongo-username</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">MONGO_INITDB_ROOT_PASSWORD</span></span><br><span class="line">            <span class="attr">valueFrom:</span></span><br><span class="line">              <span class="attr">secretKeyRef:</span></span><br><span class="line">                <span class="attr">name:</span> <span class="string">mongo-secret</span></span><br><span class="line">                <span class="attr">key:</span> <span class="string">mongo-password</span></span><br><span class="line">          <span class="comment"># Secret 的所有数据定义为容器的环境变量，Secret 中的键名称为 Pod 中的环境变量名称</span></span><br><span class="line">          <span class="comment"># envFrom:</span></span><br><span class="line">          <span class="comment"># - secretRef:</span></span><br><span class="line">          <span class="comment">#     name: mongo-secret</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hannokishi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://hannokishi.link/2022/03/21/Kubernetes%E7%AE%80%E4%BB%8B/" title="Kubernetes简介">https://hannokishi.link/2022/03/21/Kubernetes简介/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AE%B9%E5%99%A8/" rel="tag"># 容器</a>
+              <a href="/tags/docker/" rel="tag"># docker</a>
+              <a href="/tags/kubernetes/" rel="tag"># kubernetes</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/19/docker%E7%AE%80%E4%BB%8B/" rel="prev" title="docker简介">
+      <i class="fa fa-chevron-left"></i> docker简介
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/03/27/%E8%AF%AD%E8%A8%80%E5%8F%AF%E7%94%A8%E6%80%A7/" rel="next" title="语言可用性">
+      语言可用性 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#K8S%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">K8S是什么</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#K8S%E6%A1%86%E6%9E%B6"><span class="nav-number">1.1.</span> <span class="nav-text">K8S框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#K8S%E7%BB%84%E4%BB%B6"><span class="nav-number">1.2.</span> <span class="nav-text">K8S组件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA"><span class="nav-number">2.</span> <span class="nav-text">集群搭建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%8A%82%E7%82%B9kubeadm%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">2.1.</span> <span class="nav-text">主节点kubeadm初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E8%8A%82%E7%82%B9%E5%8A%A0%E5%85%A5%E9%9B%86%E7%BE%A4"><span class="nav-number">2.2.</span> <span class="nav-text">工作节点加入集群</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E4%B8%BB%E6%9C%BA%E6%9F%A5%E7%9C%8Bcluster"><span class="nav-number">2.3.</span> <span class="nav-text">控制主机查看cluster</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E7%BD%91%E7%BB%9C%E6%8F%92%E4%BB%B6"><span class="nav-number">2.4.</span> <span class="nav-text">安装网络插件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E5%BA%94%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">部署应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pod%E6%96%87%E4%BB%B6"><span class="nav-number">3.1.</span> <span class="nav-text">pod文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E9%95%9C%E5%83%8F%E5%9C%B0%E5%9D%80%E5%88%9B%E5%BB%BApod"><span class="nav-number">3.2.</span> <span class="nav-text">直接使用镜像地址创建pod</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#deployment%E6%96%87%E4%BB%B6"><span class="nav-number">3.3.</span> <span class="nav-text">deployment文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E5%90%8E%E6%8E%A7%E5%88%B6%E5%91%BD%E4%BB%A4%E6%BC%94%E7%A4%BA"><span class="nav-number">4.</span> <span class="nav-text">部署后控制命令演示</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF"><span class="nav-number">4.1.</span> <span class="nav-text">查看详细信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AB%AF%E5%8F%A3%E6%98%A0%E5%B0%84"><span class="nav-number">4.2.</span> <span class="nav-text">端口映射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E6%9C%BA%E6%BC%94%E7%A4%BA"><span class="nav-number">4.3.</span> <span class="nav-text">实机演示</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E5%88%86%E7%B1%BB"><span class="nav-number">5.</span> <span class="nav-text">工作负载分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Service"><span class="nav-number">6.</span> <span class="nav-text">Service</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E7%82%B9"><span class="nav-number">6.1.</span> <span class="nav-text">特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#service%E7%9A%84yaml%E9%85%8D%E7%BD%AE"><span class="nav-number">6.2.</span> <span class="nav-text">service的yaml配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StatefulSet-%E6%9C%89%E7%8A%B6%E6%80%81%E7%9A%84%E6%9C%8D%E5%8A%A1"><span class="nav-number">7.</span> <span class="nav-text">StatefulSet 有状态的服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-StatefulSet"><span class="nav-number">7.1.</span> <span class="nav-text">什么是 StatefulSet</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Web-%E5%BA%94%E7%94%A8%E8%BF%9E%E6%8E%A5-Mongodb"><span class="nav-number">7.2.</span> <span class="nav-text">Web 应用连接 Mongodb</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96"><span class="nav-number">8.</span> <span class="nav-text">数据持久化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Storage-Class-SC"><span class="nav-number">8.1.</span> <span class="nav-text">Storage Class (SC)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Persistent-Volume-PV"><span class="nav-number">8.1.1.</span> <span class="nav-text">Persistent Volume (PV)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Persistent-Volume-Claim-PVC"><span class="nav-number">8.2.</span> <span class="nav-text">Persistent Volume Claim (PVC)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ConfigMap-amp-Secret"><span class="nav-number">9.</span> <span class="nav-text">ConfigMap &amp; Secret</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ConfigMap"><span class="nav-number">9.1.</span> <span class="nav-text">ConfigMap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Secret"><span class="nav-number">9.2.</span> <span class="nav-text">Secret</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"><span class="nav-number">9.3.</span> <span class="nav-text">使用方法</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hannokishi"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Hannokishi</p>
+  <div class="site-description" itemprop="description">一切合切放り出したい</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hannokishi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hannokishi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:huangenming1996@gmail.com" title="E-Mail → mailto:huangenming1996@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+      <!--网易云播放器-->
+      <div id="music163player">
+          <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=280 height=86 src="//music.163.com/outchain/player?type=2&id=1331357732&auto=1&height=66">
+          </iframe>
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hannokishi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,0' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

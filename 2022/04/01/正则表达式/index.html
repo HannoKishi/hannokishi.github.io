@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/pawprint.png">
+  <link rel="mask-icon" href="/images/pawprint.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"hannokishi.link","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="c++11&#x2F;17&#x2F;20新特性学习笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="正则表达式&amp;并行并发&amp;杂项">
+<meta property="og:url" content="https://hannokishi.link/2022/04/01/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/index.html">
+<meta property="og:site_name" content="硝子の少年">
+<meta property="og:description" content="c++11&#x2F;17&#x2F;20新特性学习笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-04-01T10:20:57.000Z">
+<meta property="article:modified_time" content="2022-04-01T10:20:57.000Z">
+<meta property="article:author" content="Hannokishi">
+<meta property="article:tag" content="c++">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://hannokishi.link/2022/04/01/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>正则表达式&并行并发&杂项 | 硝子の少年</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">硝子の少年</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">些細な話</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/hannokishi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://hannokishi.link/2022/04/01/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Hannokishi">
+      <meta itemprop="description" content="一切合切放り出したい">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="硝子の少年">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          正则表达式&并行并发&杂项
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-01 10:20:57" itemprop="dateCreated datePublished" datetime="2022-04-01T10:20:57Z">2022-04-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">语言学习</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0/c/" itemprop="url" rel="index"><span itemprop="name">c++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0/c/%E7%8E%B0%E4%BB%A3c/" itemprop="url" rel="index"><span itemprop="name">现代c++</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>c++11/17/20新特性学习笔记</p>
+<span id="more"></span>
+
+<!-- toc -->
+<h2 id="正则表达式简介"><a href="#正则表达式简介" class="headerlink" title="正则表达式简介"></a>正则表达式简介</h2><p>而 C++11 正式将正则表达式的的处理方法纳入 标准库的行列，从语言级上提供了标准的支持，不再依赖第三方。</p>
+<p>C++11 提供的正则表达式库操作 std::string 对象，模式 std::regex (本质是std::basic_regex) 进行初始化，通过 std::regex_match 进行匹配，从而产生std::smatch(本质是 std::match_results 对象)。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">std::string fnames[] = &#123;<span class="string">&quot;foo.txt&quot;</span>, <span class="string">&quot;bar.txt&quot;</span>, <span class="string">&quot;test&quot;</span>, <span class="string">&quot;a0.txt&quot;</span>, <span class="string">&quot;AAA.txt&quot;</span>&#125;;</span><br><span class="line"><span class="comment">// 在 C++ 中 \ 会被作为字符串内的转义符，为使 \. 作为正则表达式传递进去生效，需要对 \ 进行二次转义，</span></span><br><span class="line"><span class="function">std::regex <span class="title">txt_regex</span><span class="params">(<span class="string">&quot;[a-z]+\\.txt&quot;</span>)</span></span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;fname: fnames)</span><br><span class="line">	std::cout &lt;&lt; fname &lt;&lt; <span class="string">&quot;: &quot;</span> &lt;&lt; std::<span class="built_in">regex_match</span>(fname, txt_regex) &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 std::smatch 可以方便的对匹配的结果进行获取</span></span><br><span class="line"><span class="function">std::regex <span class="title">base_regex</span><span class="params">(<span class="string">&quot;([a-z]+)\\.txt&quot;</span>)</span></span>; </span><br><span class="line">std::smatch base_match;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">const</span> <span class="keyword">auto</span> &amp;fname: fnames) &#123;</span><br><span class="line">	<span class="keyword">if</span> (std::<span class="built_in">regex_match</span>(fname, base_match, base_regex)) &#123; </span><br><span class="line">	<span class="comment">// std::smatch 的第一个元素匹配整个字符串  </span></span><br><span class="line">	<span class="comment">// std::smatch 的第二个元素匹配了第一个括号表达式  </span></span><br><span class="line">	<span class="keyword">if</span> (base_match.<span class="built_in">size</span>() == <span class="number">2</span>) &#123;</span><br><span class="line">		std::string base = base_match[<span class="number">1</span>].<span class="built_in">str</span>();</span><br><span class="line">		std::cout &lt;&lt; <span class="string">&quot;sub-match[0]: &quot;</span> &lt;&lt; base_match[<span class="number">0</span>].<span class="built_in">str</span>() &lt;&lt; std::endl;</span><br><span class="line">		std::cout &lt;&lt; fname &lt;&lt; <span class="string">&quot; sub-match[1]: &quot;</span> &lt;&lt; base &lt;&lt; std::endl; </span><br><span class="line">		&#125; </span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 输出：</span></span><br><span class="line">foo.txt: <span class="number">1</span></span><br><span class="line">bar.txt: <span class="number">1</span></span><br><span class="line">test: <span class="number">0</span></span><br><span class="line">a0.txt: <span class="number">0</span></span><br><span class="line">AAA.txt: <span class="number">0</span></span><br><span class="line">sub-match[<span class="number">0</span>]: foo.txt</span><br><span class="line">foo.txt sub-match[<span class="number">1</span>]: foo</span><br><span class="line">sub-match[<span class="number">0</span>]: bar.txt</span><br><span class="line">bar.txt sub-match[<span class="number">1</span>]: bar</span><br></pre></td></tr></table></figure>
+
+<h2 id="并行与并发"><a href="#并行与并发" class="headerlink" title="并行与并发"></a>并行与并发</h2><h3 id="并行基础"><a href="#并行基础" class="headerlink" title="并行基础"></a>并行基础</h3><p>c++11开始提供了std::thread类</p>
+<h3 id="互斥量与临界区"><a href="#互斥量与临界区" class="headerlink" title="互斥量与临界区"></a>互斥量与临界区</h3><p>通过实例化 std::mutex 可以创建互斥量，而通过 其成员函数 lock() 可以进行上锁，unlock() 可以进行解锁。但是在在实际编写代码的过程中，最好不 去直接调用成员函数，因为调用成员函数就需要在每个临界区的出口处调用 unlock()，当然，还包括异 常。这时候 C++11 还为互斥量提供了一个 RAII 语法的模板类<code> std::lock_guard</code>。RAII 在不失代码简 洁性的同时，很好的保证了代码的异常安全性。</p>
+<ul>
+<li><code>std::lock_guard</code> : </li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> v = <span class="number">1</span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">critical_section</span><span class="params">(<span class="keyword">int</span> change_v)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">static</span> std::mutex mtx;</span><br><span class="line">	<span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>; </span><br><span class="line">	<span class="comment">// 执行竞争操作 </span></span><br><span class="line">	v = change_v;</span><br><span class="line">	<span class="comment">// 离开此作用域后 mtx 会被释放</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于 C++ 保证了所有栈对象在声明周期结束时会被销毁，所以这样的代码也是异常安全的。无论 critical_section() 正常返回、还是在中途抛出异常，都会引发堆栈回退，也就自动调用了 unlock()。</p>
+<ul>
+<li><code>std::unique_lock</code> :<br>std::unique_lock 则 相 对 于 std::lock_guard 出 现 的，std::unique_lock 更 加 灵 活， std::unique_lock 的对象会以独占所有权(没有其他的 unique_lock 对象同时拥有某个 mutex 对象的所有权)的方式管理 mutex 对象上的上锁和解锁的操作。所以在并发编程中，推荐使用 std::unique_lock。</li>
+</ul>
+<p>std::lock_guard 不能显式的调用 lock 和 unlock，而 <strong>std::unique_lock 可以在声明后的任意位置调用</strong>，可以缩小锁的作用范围，提供更高的并发度。</p>
+<p>如果你用到了条件变量 std::condition_variable::wait 则<strong>必须</strong>使用 std::unique_lock 作为参 数。因为条件变量的wait要先解锁，而只有std::unique_lock才有解锁功能。</p>
+<h3 id="期物（Future）"><a href="#期物（Future）" class="headerlink" title="期物（Future）"></a>期物（Future）</h3><p>期物(Future)表现为 std::future，它提供了一个访问异步操作结果的途径</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将一个返回值为 7 的 lambda 表达式封装到 task 中  </span></span><br><span class="line"><span class="comment">// std::packaged_task 的模板参数为要封装函数的类型</span></span><br><span class="line"><span class="function">std::packaged_task&lt;<span class="title">int</span><span class="params">()</span>&gt; <span class="title">task</span><span class="params">([]()&#123;<span class="keyword">return</span> <span class="number">7</span>;&#125;)</span></span>;</span><br><span class="line"><span class="comment">// 获得 task 的期物</span></span><br><span class="line">std::future&lt;<span class="keyword">int</span>&gt; result = task.<span class="built_in">get_future</span>();</span><br><span class="line"><span class="comment">// 在一个线程中执行 task</span></span><br><span class="line">std::<span class="built_in">thread</span>(std::<span class="built_in">move</span>(task)).<span class="built_in">detach</span>();</span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;waiting...&quot;</span>;</span><br><span class="line">result.<span class="built_in">wait</span>(); <span class="comment">// 在此设置屏障，阻塞到期物的完成</span></span><br><span class="line"><span class="comment">// 输出执行结果</span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;done!&quot;</span> &lt;&lt; std:: endl &lt;&lt; <span class="string">&quot;future result is &quot;</span> &lt;&lt; result.<span class="built_in">get</span>() &lt;&lt; std::endl;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="条件变量"><a href="#条件变量" class="headerlink" title="条件变量"></a>条件变量</h3><p>条件变量 std::condition_variable 是为了解决死锁而生，当互斥操作不够用而引入的。比如，线程 可能需要等待某个条件为真才能继续执行，而一个忙等待循环中可能会导致所有其他线程都无法进入临 界区使得条件为真时，就会发生死锁。</p>
+<h3 id="原子操作与内存模型"><a href="#原子操作与内存模型" class="headerlink" title="原子操作与内存模型"></a>原子操作与内存模型</h3><h4 id="原子操作"><a href="#原子操作" class="headerlink" title="原子操作"></a>原子操作</h4><p>std::mutex 可以解决上面出现的并发读写的问题，但互斥锁是操作系统级的功能，这是因为一个互 斥锁的实现通常包含两条基本原理:</p>
+<ul>
+<li> 提供线程间自动的状态转换，即『锁住』这个状态</li>
+<li> 保障在互斥锁操作期间，所操作变量的内存与临界区外进行隔离</li>
+</ul>
+<p>这是一组非常强的同步条件，换句话说当最终编译为 CPU 指令时会表现为非常多的指令(我们之 后再来看如何实现一个简单的互斥锁)。这对于一个仅需原子级操作(没有中间态)的变量，似乎太苛刻了。</p>
+<p>在现代 CPU 体 系结构下提供了 CPU 指令级的原子操作，因此在 C++11 中多线程下共享变量的读写这一问题上，还引 入了 <code>std::atomic</code> 模板，使得我们实例化一个原子类型，将一个原子类型读写操作从一组指令，最小化 到单个 CPU 指令。<br><code>std::atomic&lt;int&gt; counter;</code><br>包括 fetch_add, fetch_sub等，同时通过重载方便的提供了对应的 +，- 版本。</p>
+<ul>
+<li>例子: </li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::thread <span class="title">t1</span><span class="params">([]()&#123; </span></span></span><br><span class="line"><span class="params"><span class="function">	count.fetch_add(<span class="number">1</span>);</span></span></span><br><span class="line"><span class="params"><span class="function">&#125;)</span></span>; </span><br><span class="line"></span><br><span class="line"><span class="function">std::thread <span class="title">t2</span><span class="params">([]()&#123;</span></span></span><br><span class="line"><span class="params"><span class="function">	count++; </span></span></span><br><span class="line"><span class="params"><span class="function">	count += <span class="number">1</span>;</span></span></span><br><span class="line"><span class="params"><span class="function"><span class="comment">// 等价于 fetch_add // 等价于 fetch_add</span></span></span></span><br><span class="line"><span class="params"><span class="function">&#125;)</span></span>;  </span><br><span class="line">t1.<span class="built_in">join</span>();  </span><br><span class="line">t2.<span class="built_in">join</span>();  </span><br><span class="line">std::cout &lt;&lt; count &lt;&lt; std::endl;</span><br></pre></td></tr></table></figure>
+
+<h3 id="一致性模型"><a href="#一致性模型" class="headerlink" title="一致性模型"></a>一致性模型</h3><p>四种不同的一致性模型: </p>
+<ul>
+<li>线性一致性:<ul>
+<li>又称强一致性或原子一致性，并且所有线程的操作顺序与全局时钟下的顺序是一致的。</li>
+</ul>
+</li>
+<li>顺序一致性:<ul>
+<li>同样要求任何一次读操作都能读到数据最近一次写入的数据，但未要求与全局时钟的 顺序一致。</li>
+</ul>
+</li>
+<li>因果关系一致性: <ul>
+<li>它的要求进一步降低，只需要有因果关系的操作顺序得到保障，而非因果关系的操作 顺序则不做要求。</li>
+</ul>
+</li>
+<li>最终一致性:<ul>
+<li> 是最弱的一致性要求，它只保障某个操作在未来的某个时间节点上会被观察到，但并 未要求被观察到的时间。</li>
+</ul>
+</li>
+</ul>
+<h3 id="C-的内存顺序"><a href="#C-的内存顺序" class="headerlink" title="C++的内存顺序"></a>C++的内存顺序</h3><p>C++11 为原子操作定义了六种不同的内存顺序 std::memory_order 的选项，表达了四种多线程间的同步模型。</p>
+<ul>
+<li><p>宽松模型:  在此模型下，单个线程内的原子操作都是顺序执行的，不允许指令重排，但不同线程间原子操作的顺序是任意的。<br><code>counter.fetch_add(1, std::memory_order_relaxed);</code></p>
+</li>
+<li><p>释放/消费模型:  如果某个线程需要修改某个值，但 另一个线程会对该值的某次操作产生依赖，即后者<code>依赖</code>前者。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 生产者生产</span></span><br><span class="line">ptr.<span class="built_in">store</span>(p, std::memory_order_release);</span><br><span class="line"><span class="comment">// 消费者消费</span></span><br><span class="line">ptr.<span class="built_in">load</span>(std::memory_order_consume)</span><br></pre></td></tr></table></figure></li>
+<li><p>释放/获取模型<br>在释放 std::memory_order_release 和获取 std::memory_order_acquire 之间规定时序，即发生在释放 操作之前的所有写操作，对其他线程的任何获取操作都是可见的，亦即发生顺序(happens-before)。<br>std::memory_order_release 确保了它之后的写行为不会发生在释放操作之前。是一个向前的屏障<br>std::memory_order_acquire 确保了它之前的写行为，不会发生在该获取操作 之后，是一个向后的屏障<br>std::memory_order_acq_rel 而言，则结合了这两者的特点， 唯一确定了一个内存屏障，使得当前线程对内存的读写不会被重排到此操作的前后。</p>
+</li>
+<li><p>顺序一致性模型<br>在此模型下，原子操作满足顺序一致性，进而可能对性能产生损耗。可显式的通过 std::memory_order_seq_cst 进行指定。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">counter.<span class="built_in">fetch_add</span>(<span class="number">1</span>, std::memory_order_seq_cst);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="其他杂项"><a href="#其他杂项" class="headerlink" title="其他杂项"></a>其他杂项</h2><h3 id="新类型"><a href="#新类型" class="headerlink" title="新类型"></a>新类型</h3><h4 id="long-long-int"><a href="#long-long-int" class="headerlink" title="long long int"></a>long long int</h4><p>C++11 的工作则是正式把它纳入标准库，规定了一个 long long int 类型至少具备 64 位的比特数。</p>
+<h3 id="noexcept-的修饰和操作"><a href="#noexcept-的修饰和操作" class="headerlink" title="noexcept 的修饰和操作"></a>noexcept 的修饰和操作</h3><ul>
+<li>C++11 将异常的声明简化为以下两种情况:</li>
+</ul>
+<ol>
+<li><p>函数可能抛出任何异常</p>
+</li>
+<li><p>函数不能抛出任何异常<br>并使用 noexcept 对这两种行为进行限制</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">may_throw</span><span class="params">()</span></span>; <span class="comment">// 可能抛出异常  </span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">no_throw</span><span class="params">()</span> <span class="keyword">noexcept</span></span>; <span class="comment">// 不可能抛出异常</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>使用 noexcept 修饰过的函数如果抛出异常，编译器会使用 std::terminate() 来立即终止程序运行。</p>
+<p>noexcept 还能够做操作符，用于操作一个表达式，当表达式无异常时，返回 true，否则返回 false。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">std::cout &lt;&lt; std::boolalpha  </span><br><span class="line">&lt;&lt; <span class="string">&quot;may_throw() noexcept? &quot;</span> &lt;&lt; <span class="built_in"><span class="keyword">noexcept</span></span>(<span class="built_in">may_throw</span>()) &lt;&lt; std::endl</span><br></pre></td></tr></table></figure>
+<p>noexcept 修饰完一个函数之后能够起到封锁异常扩散的功效，如果内部产生异常，外部也不会触发。</p>
+<h3 id="字面量"><a href="#字面量" class="headerlink" title="字面量"></a>字面量</h3><h4 id="原始字符串字面量"><a href="#原始字符串字面量" class="headerlink" title="原始字符串字面量"></a>原始字符串字面量</h4><p>C++11 提供了原始字符串字面量的写法，可以在一个字符串前方使用 R 来修饰这个字符串，同时，将原始字符串使用括号包裹</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::string str = <span class="string">R&quot;(C:\File\To\Path)&quot;</span>;</span><br></pre></td></tr></table></figure>
+<h4 id="自定义字面量"><a href="#自定义字面量" class="headerlink" title="自定义字面量"></a>自定义字面量</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">// 字符串字面量自定义必须设置如下的参数列表  </span><br><span class="line">std::string operator&quot;&quot; _wow1(const char *wow1, size_t len) &#123;</span><br><span class="line">	return std::string(wow1)+&quot;woooooooooow, amazing&quot;; </span><br><span class="line">&#125;</span><br><span class="line">std::string operator&quot;&quot; _wow2 (unsigned long long i) &#123; </span><br><span class="line">	return std::to_string(i)+&quot;woooooooooow, amazing&quot;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 相当于重载了_wow1和_wow2</span><br><span class="line">// 调用</span><br><span class="line">int main() &#123;  </span><br><span class="line">	auto str = &quot;abc&quot;_wow1;  </span><br><span class="line">	auto num = 1_wow2;  </span><br><span class="line">	std::cout &lt;&lt; str &lt;&lt; std::endl; </span><br><span class="line">	std::cout &lt;&lt; num &lt;&lt; std::endl; </span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="内存对齐"><a href="#内存对齐" class="headerlink" title="内存对齐"></a>内存对齐</h3><p>C++ 11 引入了两个新的关键字<code> alignof</code> 和 <code>alignas</code> 来支持对内存对齐进行控制。</p>
+<p><code>alignof</code> 关键字 能够获得一个与平台相关的 std::size_t 类型的值，用于查询该平台的对齐方式。</p>
+<p>C++ 11 还引入了 <code>alignas</code> 来重新修饰某个结构 的对齐方式。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Storage</span> &#123;</span> </span><br><span class="line">	<span class="keyword">char</span> a; </span><br><span class="line">	<span class="keyword">int</span> b; </span><br><span class="line">	<span class="keyword">double</span> c; </span><br><span class="line">	<span class="keyword">long</span> <span class="keyword">long</span> d;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"> </span><br><span class="line"><span class="function">struct <span class="title">alignas</span><span class="params">(std::<span class="keyword">max_align_t</span>)</span> AlignasStorage </span>&#123; </span><br><span class="line">	<span class="keyword">char</span> a;</span><br><span class="line">	<span class="keyword">int</span>      b;</span><br><span class="line">	<span class="keyword">double</span>   c;</span><br><span class="line">	<span class="keyword">long</span> <span class="keyword">long</span> d; </span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">	std::cout &lt;&lt; <span class="built_in"><span class="keyword">alignof</span></span>(Storage) &lt;&lt; std::endl; </span><br><span class="line">	std::cout &lt;&lt; <span class="built_in"><span class="keyword">alignof</span></span>(AlignasStorage) &lt;&lt; std::endl; </span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中 <code>std::max_align_t</code> 要求每个标量类型的对齐方式严格一样，因此它几乎是最大标量没有差异， 进而大部分平台上得到的结果为 long double，因此我们这里得到的 AlignasStorage 的对齐要求是 8 或 16。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hannokishi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://hannokishi.link/2022/04/01/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" title="正则表达式&amp;并行并发&amp;杂项">https://hannokishi.link/2022/04/01/正则表达式/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/c/" rel="tag"># c++</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/31/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E4%B8%8E%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="prev" title="智能指针与内存管理">
+      <i class="fa fa-chevron-left"></i> 智能指针与内存管理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/07/makefile%E8%AF%AD%E6%B3%95/" rel="next" title="makefile语法">
+      makefile语法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">正则表达式简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E8%A1%8C%E4%B8%8E%E5%B9%B6%E5%8F%91"><span class="nav-number">2.</span> <span class="nav-text">并行与并发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E8%A1%8C%E5%9F%BA%E7%A1%80"><span class="nav-number">2.1.</span> <span class="nav-text">并行基础</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%92%E6%96%A5%E9%87%8F%E4%B8%8E%E4%B8%B4%E7%95%8C%E5%8C%BA"><span class="nav-number">2.2.</span> <span class="nav-text">互斥量与临界区</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%9F%E7%89%A9%EF%BC%88Future%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">期物（Future）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F"><span class="nav-number">2.4.</span> <span class="nav-text">条件变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C%E4%B8%8E%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.5.</span> <span class="nav-text">原子操作与内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">2.5.1.</span> <span class="nav-text">原子操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.6.</span> <span class="nav-text">一致性模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E7%9A%84%E5%86%85%E5%AD%98%E9%A1%BA%E5%BA%8F"><span class="nav-number">2.7.</span> <span class="nav-text">C++的内存顺序</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E6%9D%82%E9%A1%B9"><span class="nav-number">3.</span> <span class="nav-text">其他杂项</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B0%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.1.</span> <span class="nav-text">新类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#long-long-int"><span class="nav-number">3.1.1.</span> <span class="nav-text">long long int</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#noexcept-%E7%9A%84%E4%BF%AE%E9%A5%B0%E5%92%8C%E6%93%8D%E4%BD%9C"><span class="nav-number">3.2.</span> <span class="nav-text">noexcept 的修饰和操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%97%E9%9D%A2%E9%87%8F"><span class="nav-number">3.3.</span> <span class="nav-text">字面量</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8E%9F%E5%A7%8B%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AD%97%E9%9D%A2%E9%87%8F"><span class="nav-number">3.3.1.</span> <span class="nav-text">原始字符串字面量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AD%97%E9%9D%A2%E9%87%8F"><span class="nav-number">3.3.2.</span> <span class="nav-text">自定义字面量</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90"><span class="nav-number">3.4.</span> <span class="nav-text">内存对齐</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hannokishi"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Hannokishi</p>
+  <div class="site-description" itemprop="description">一切合切放り出したい</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hannokishi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hannokishi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:huangenming1996@gmail.com" title="E-Mail → mailto:huangenming1996@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+      <!--网易云播放器-->
+      <div id="music163player">
+          <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=280 height=86 src="//music.163.com/outchain/player?type=2&id=1331357732&auto=1&height=66">
+          </iframe>
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hannokishi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,0' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
