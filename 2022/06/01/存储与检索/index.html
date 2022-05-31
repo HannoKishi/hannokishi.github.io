@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/pawprint.png">
+  <link rel="mask-icon" href="/images/pawprint.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"hannokishi.link","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="哈希索引键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。 ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值">
+<meta property="og:type" content="article">
+<meta property="og:title" content="存储与检索">
+<meta property="og:url" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/index.html">
+<meta property="og:site_name" content="硝子の少年">
+<meta property="og:description" content="哈希索引键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。 ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/sstable.png">
+<meta property="og:image" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/b%E6%A0%91.png">
+<meta property="article:published_time" content="2022-05-31T19:41:24.000Z">
+<meta property="article:modified_time" content="2022-05-31T19:41:24.000Z">
+<meta property="article:author" content="Hannokishi">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/sstable.png">
+
+<link rel="canonical" href="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>存储与检索 | 硝子の少年</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">硝子の少年</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">些細な話</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/hannokishi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Hannokishi">
+      <meta itemprop="description" content="一切合切放り出したい">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="硝子の少年">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          存储与检索
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-05-31 19:41:24" itemprop="dateCreated datePublished" datetime="2022-05-31T19:41:24Z">2022-05-31</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">读书笔记</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%AF%86%E9%9B%86%E5%9E%8B%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F/" itemprop="url" rel="index"><span itemprop="name">设计数据密集型应用程序</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="哈希索引"><a href="#哈希索引" class="headerlink" title="哈希索引"></a>哈希索引</h2><p>键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。<br>那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。</p>
+<p>ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值。</p>
+<p>但是，哈希表索引也有局限性:</p>
+<ul>
+<li><p>散列表必须能放进内存</p>
+<p>  如果你有非常多的键，那真是倒霉。原则上可以在磁盘上保留一个哈希映射，不幸的是 磁盘哈希映射很难表现优秀。它需要大量的随机访问I/O，当它变满时增长是很昂贵的， 并且散列冲突需要很多的逻辑【5】。</p>
+</li>
+<li><p>范围查询效率不高。</p>
+<p>  例如，您无法轻松扫描kitty00000和kitty99999之间的所有键——您 必须在散列映射中单独查找每个键。</p>
+</li>
+</ul>
+<h2 id="SSTables（Sorted-String-Table）排序字符串表"><a href="#SSTables（Sorted-String-Table）排序字符串表" class="headerlink" title="SSTables（Sorted String Table）排序字符串表"></a>SSTables（Sorted String Table）排序字符串表</h2><p>SSTable 文件用于 Bigtable 内部数据存储。SSTable 文件是一个排序的、不可变的、持久化的 map 结构，其中 map 的 key-value 都可以是任意字节的字符串。支持使用指定键来查找值，或通过给定键范围遍历所有的 key-value 对。</p>
+<p><img src="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/sstable.png" title="内存索引的sstable"></p>
+<p>工作方式: </p>
+<ul>
+<li>写入时，将其添加到内存中的平衡树数据结构(例如，红黑树)。这个内存树有时被称 为内存表(memtable)</li>
+<li>当内存表大于某个阈值(通常为几兆字节)时，将其作为SSTable文件写入磁盘。当SSTable被写入磁盘时，写入可以继续到一个新的内存表实例。</li>
+<li>为了提供读取请求，<code>首先</code>尝试在内存表中找到关键字，<code>然后</code>在最近的磁盘段中，<code>然后</code>在 下一个较旧的段中找到该关键字。</li>
+<li>有时会在后台运行合并和压缩过程以组合段文件并丢弃覆盖或删除的值。</li>
+</ul>
+<p>这种就是常说的<strong>LSM树</strong>（Log Structured Merge Tree，结构化合并<strong>树</strong>）</p>
+<h2 id="B树"><a href="#B树" class="headerlink" title="B树"></a>B树</h2><p><img src="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/b%E6%A0%91.png" title="b树"></p>
+<p>B树将数据库分解成固定大小的块或页面，传统上大 小为4KB(有时会更大)，每个页面都可以使用地址或位置来标识，这允许一个页面引用另一个页面 —— 类似于指针， 但在磁盘而不是在内存中。<br>一个页面会被指定为B树的根;在索引中查找一个键时，就从这里开始。该页面包含几个键和 对子页面的引用。每个子页面负责一段连续范围的键，引用之间的键，指明了引用子页面的 键范围。</p>
+<p>工作方式:</p>
+<ul>
+<li>如果要更新B树中现有键的值，则搜索包含该键的叶页，更改该页中的值，并将该页写回到磁 盘(对该页的任何引用保持有效) 。</li>
+<li>如果你想添加一个新的键，你需要找到其范围包含新键 的页面，并将其添加到该页面。如果页面中没有足够的可用空间容纳新键，则将其分成两个 半满页面，并更新父页面以解释键范围的新分区</li>
+</ul>
+<h2 id="比较B树和LSM树"><a href="#比较B树和LSM树" class="headerlink" title="比较B树和LSM树"></a>比较B树和LSM树</h2><p>根据经验，通 常LSM树的写入速度更快，而B树的读取速度更快。 LSM树上的读取通常比较慢，因 为它们必须在压缩的不同阶段检查几个不同的数据结构和SSTables。</p>
+<h3 id="LSM树的优点"><a href="#LSM树的优点" class="headerlink" title="LSM树的优点"></a>LSM树的优点</h3><p>b树写数据至少两次: 1. 一次预先写入日志 2. 一次写入树本身（还有可能会分页）即使在该页面中只有几个字节发生了变化，也需要一次编写整个页面的开销。</p>
+<ul>
+<li>写速度突出<ul>
+<li>LSM树通常能够比B树支持更高的写入吞吐量，部分原因是它们有时具有较低的写放大 (尽管这取决于存储引擎配置和工作负载)，部分是因为它们顺序地写入紧凑的SSTable文件 而不是必须覆盖树中的几个页面。顺序写入 比随机写入快得多。</li>
+</ul>
+</li>
+<li>磁盘利用率高<ul>
+<li>LSM树可以被压缩得更好，因此经常比B树在磁盘上产生更小的文件。 B树存储引擎会由于分 割而留下一些未使用的磁盘空间:当页面被拆分或某行不能放入现有页面时，页面中的某些 空间仍未被使用。由于LSM树不是面向页面的，并且定期重写SSTables以去除碎片，所以它 们具有较低的存储开销，特别是当使用平坦压缩时</li>
+</ul>
+</li>
+</ul>
+<h3 id="LSM的缺点"><a href="#LSM的缺点" class="headerlink" title="LSM的缺点"></a>LSM的缺点</h3><ul>
+<li>日志结构存储的缺点是压缩过程有时会干扰正在进行的读写操作。尽管存储引擎尝试逐步执 行压缩而不影响并发访问，但是磁盘资源有限，所以很容易发生请求需要等待而磁盘完成昂 贵的压缩操作。</li>
+<li>压缩的另一个问题出现在高写入吞吐量:磁盘的有限写入带宽需要在初始写入(记录和刷新内存表到磁盘)和在后台运行的压缩线程之间共享。</li>
+<li>如果写入吞吐量很高，并且压缩没有仔细配置，压缩跟不上写入速率。在这种情况下，磁盘 上未合并段的数量不断增加，直到磁盘空间用完，读取速度也会减慢，因为它们需要检查更 多段文件。</li>
+</ul>
+<p>B树的优点：在许多关系数据库中，事务隔离是通过在键范围上使用锁来实现的，在B树索引中，这些 锁可以直接连接到树。（B树的索引只有唯一的一个，而日志结构化存储引擎则可能在不同的段中有相同的副本）</p>
+<h2 id="其他索引"><a href="#其他索引" class="headerlink" title="其他索引"></a>其他索引</h2><h3 id="值存在索引中"><a href="#值存在索引中" class="headerlink" title="值存在索引中"></a>值存在索引中</h3><ul>
+<li>索引中的关键字是查询搜索的内容，但是该值可以是以下两种情况之一:它可以是所讨论的 实际行(文档，顶点)，也可以是对存储在别处的行的引用。行被存储的 地方被称为堆文件(heap file)，并且存储的数据没有特定的顺序。</li>
+<li>将索引行直接存储在索引中。这被称为<code>聚集索引</code>。例如，在MySQL的InnoDB存储引擎中，表的主键 总是一个聚簇索引。</li>
+<li>在<code>聚集索引(clustered index)</code>(在索引中存储所有行数据)和<code>非聚集索引(nonclustered index)</code>(仅在索引中存储对数据的引用)之间的折衷被称为包含列的索引(index with included columns)或<code>覆盖索引(covering index)</code>，其存储表的一部分在索引内。</li>
+</ul>
+<h3 id="多列索引"><a href="#多列索引" class="headerlink" title="多列索引"></a>多列索引</h3><ul>
+<li><code>连接索引(concatenated index)</code>，它通过将一列的值追加到另一 列后面，简单地将多个字段组合成一个键(索引定义中指定了字段的连接顺序)。</li>
+<li><code>多维索引(multi-dimensional index)</code>是一种查询多个列的更一般的方法，这对于地理空间 数据尤为重要。(扩展到R树)</li>
+</ul>
+<h3 id="全文搜索和模糊索引"><a href="#全文搜索和模糊索引" class="headerlink" title="全文搜索和模糊索引"></a>全文搜索和模糊索引</h3><h3 id="事务处理与分析"><a href="#事务处理与分析" class="headerlink" title="事务处理与分析"></a>事务处理与分析</h3><p>即使数据库开始被用于许多不同类型的博客文章，游戏中的动作，地址簿中的联系人等等， 基本访问模式仍然类似于处理业务事务。应用程序通常使用索引通过某个键查找少量记录。 根据用户的输入插入或更新记录。由于这些应用程序是交互式的，因此访问模式被称为在线 事务处理(OLTP, OnLine Transaction Processing)。</p>
+<p>这些查询通常由业务分析师编写，并提供给帮助公司管理层做出更好决策(商业智能)的报 告。为了区分这种使用数据库的事务处理模式，它被称为在线分析处理(OLAP, OnLine Analytice Processing)</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>OLTP系统通常面向用户，这意味着他们可能会看到大量的请求。为了处理负载，应用程 序通常只触及每个查询中的少量记录。应用程序使用某种键来请求记录，存储引擎使用 索引来查找所请求的键的数据。磁盘寻道时间往往是这里的瓶颈。 </li>
+<li>OLAP数据仓库和类似的分析系统不太知名，因为它们主要由业务分析人员使用，而不是由最 终用户使用。它们处理比OLTP系统少得多的查询量，但是每个查询通常要求很高，需要 在短时间内扫描数百万条记录。磁盘带宽(不是查找时间)往往是瓶颈，列式存储是这 种工作负载越来越流行的解决方案。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hannokishi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/" title="存储与检索">https://hannokishi.link/2022/06/01/存储与检索/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/%E5%AD%98%E5%82%A8/" rel="tag"># 存储</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/" rel="prev" title="golang的list实现">
+      <i class="fa fa-chevron-left"></i> golang的list实现
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95"><span class="nav-number">1.</span> <span class="nav-text">哈希索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SSTables%EF%BC%88Sorted-String-Table%EF%BC%89%E6%8E%92%E5%BA%8F%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%A1%A8"><span class="nav-number">2.</span> <span class="nav-text">SSTables（Sorted String Table）排序字符串表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#B%E6%A0%91"><span class="nav-number">3.</span> <span class="nav-text">B树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AF%94%E8%BE%83B%E6%A0%91%E5%92%8CLSM%E6%A0%91"><span class="nav-number">4.</span> <span class="nav-text">比较B树和LSM树</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LSM%E6%A0%91%E7%9A%84%E4%BC%98%E7%82%B9"><span class="nav-number">4.1.</span> <span class="nav-text">LSM树的优点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LSM%E7%9A%84%E7%BC%BA%E7%82%B9"><span class="nav-number">4.2.</span> <span class="nav-text">LSM的缺点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E7%B4%A2%E5%BC%95"><span class="nav-number">5.</span> <span class="nav-text">其他索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%80%BC%E5%AD%98%E5%9C%A8%E7%B4%A2%E5%BC%95%E4%B8%AD"><span class="nav-number">5.1.</span> <span class="nav-text">值存在索引中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E5%88%97%E7%B4%A2%E5%BC%95"><span class="nav-number">5.2.</span> <span class="nav-text">多列索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%92%8C%E6%A8%A1%E7%B3%8A%E7%B4%A2%E5%BC%95"><span class="nav-number">5.3.</span> <span class="nav-text">全文搜索和模糊索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E5%A4%84%E7%90%86%E4%B8%8E%E5%88%86%E6%9E%90"><span class="nav-number">5.4.</span> <span class="nav-text">事务处理与分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.5.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hannokishi"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Hannokishi</p>
+  <div class="site-description" itemprop="description">一切合切放り出したい</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hannokishi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hannokishi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:huangenming1996@gmail.com" title="E-Mail → mailto:huangenming1996@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+      <!--网易云播放器-->
+      <div id="music163player">
+          <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=280 height=86 src="//music.163.com/outchain/player?type=2&id=1331357732&auto=1&height=66">
+          </iframe>
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hannokishi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,0' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
