@@ -21,12 +21,12 @@
     var CONFIG = {"hostname":"hannokishi.link","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="哈希索引键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。 ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值">
+  <meta name="description" content="设计数据密集型应用程序，一些常用的存储引擎与索引。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="存储与检索">
 <meta property="og:url" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/index.html">
 <meta property="og:site_name" content="硝子の少年">
-<meta property="og:description" content="哈希索引键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。 ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值">
+<meta property="og:description" content="设计数据密集型应用程序，一些常用的存储引擎与索引。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/sstable.png">
 <meta property="og:image" content="https://hannokishi.link/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/b%E6%A0%91.png">
@@ -279,7 +279,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="哈希索引"><a href="#哈希索引" class="headerlink" title="哈希索引"></a>哈希索引</h2><p>键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。<br>那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。</p>
+        <p>设计数据密集型应用程序，一些常用的存储引擎与索引。</p>
+<span id="more"></span>
+
+<!-- toc -->
+
+<h2 id="哈希索引"><a href="#哈希索引" class="headerlink" title="哈希索引"></a>哈希索引</h2><p>键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。<br>那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。</p>
 <p>ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值。</p>
 <p>但是，哈希表索引也有局限性:</p>
 <ul>
