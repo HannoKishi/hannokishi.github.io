@@ -21,20 +21,21 @@
     var CONFIG = {"hostname":"hannokishi.link","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="在leetcode刷题时候，会用到链表的数据结构。在go语言中，链表的实现是有现成的接口的。">
+  <meta name="description" content="要解决数据不丢失的问题，只能通过数据冗余的方法，就算是数据分区，每个区也需要进行数据冗余处理。这就是数据副本。当出现某个节点的数据丢失时，可以从副本读到。数据副本是分布式系统解决数据丢失异常的唯一手段。在数据副本的情况下，如何解决分布式数据一致性：">
 <meta property="og:type" content="article">
-<meta property="og:title" content="golang的list实现">
-<meta property="og:url" content="https://hannokishi.link/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:title" content="一致性算法">
+<meta property="og:url" content="https://hannokishi.link/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/index.html">
 <meta property="og:site_name" content="硝子の少年">
-<meta property="og:description" content="在leetcode刷题时候，会用到链表的数据结构。在go语言中，链表的实现是有现成的接口的。">
+<meta property="og:description" content="要解决数据不丢失的问题，只能通过数据冗余的方法，就算是数据分区，每个区也需要进行数据冗余处理。这就是数据副本。当出现某个节点的数据丢失时，可以从副本读到。数据副本是分布式系统解决数据丢失异常的唯一手段。在数据副本的情况下，如何解决分布式数据一致性：">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-05-24T11:24:21.000Z">
-<meta property="article:modified_time" content="2022-05-24T11:24:21.000Z">
+<meta property="article:published_time" content="2022-07-28T11:00:15.000Z">
+<meta property="article:modified_time" content="2022-07-28T11:00:15.000Z">
 <meta property="article:author" content="Hannokishi">
-<meta property="article:tag" content="golang">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://hannokishi.link/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/">
+<link rel="canonical" href="https://hannokishi.link/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/">
 
 
 <script id="page-configurations">
@@ -47,7 +48,7 @@
   };
 </script>
 
-  <title>golang的list实现 | 硝子の少年</title>
+  <title>一致性算法 | 硝子の少年</title>
   
 
 
@@ -204,7 +205,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://hannokishi.link/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/">
+    <link itemprop="mainEntityOfPage" href="https://hannokishi.link/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -217,7 +218,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          golang的list实现
+          一致性算法
         </h1>
 
         <div class="post-meta">
@@ -227,7 +228,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2022-05-24 11:24:21" itemprop="dateCreated datePublished" datetime="2022-05-24T11:24:21Z">2022-05-24</time>
+              <time title="创建时间：2022-07-28 11:00:15" itemprop="dateCreated datePublished" datetime="2022-07-28T11:00:15Z">2022-07-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -235,7 +236,11 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a>
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">分布式系统</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/%E4%B8%80%E8%87%B4%E6%80%A7/" itemprop="url" rel="index"><span itemprop="name">一致性</span></a>
                 </span>
             </span>
 
@@ -252,14 +257,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>881</span>
+              <span>2.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -271,20 +276,51 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>在leetcode刷题时候，会用到链表的数据结构。在go语言中，链表的实现是有现成的接口的。</p>
+        <hr>
+<p>要解决数据不丢失的问题，只能通过数据冗余的方法，就算是数据分区，每个区也需要进行数据冗余处理。这就是数据副本。当出现某个节点的数据丢失时，可以从副本读到。数据副本是分布式系统解决数据丢失异常的唯一手段。<br>在数据副本的情况下，如何解决分布式数据一致性：</p>
 <span id="more"></span>
-
 <!-- toc -->
 
-<p>在Go语言中，列表使用 container/list 包来实现，内部的实现原理是双链表，列表能够高效地进行任意位置的元素插入和删除操作。</p>
-<ul>
-<li><code>container/list</code>包中导入<br>list 包实现了一个双链表（doubly linked list）。<h2 id="Element类型"><a href="#Element类型" class="headerlink" title="Element类型"></a>Element类型</h2>Element 用于代表双链表的元素</li>
+<h2 id="一致性模型"><a href="#一致性模型" class="headerlink" title="一致性模型"></a>一致性模型</h2><ul>
+<li><strong>weak若一致性</strong>：当你写入一个新值后，读操作在数据副本上可能读出来，也可能读不出来。</li>
+<li><strong>Eventually最终一致性</strong>：当你写入一个新值后，有可能读不出来，但在某个时间窗口之后保证最终能读出来。</li>
+<li><strong>Strong强一致性</strong>：新的数据一旦写入，在任意副本任意时刻都能读到新值。</li>
 </ul>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Element <span class="keyword">struct</span> &#123;</span><br><span class="line">    next, prev *Element</span><br><span class="line">    list       *List</span><br><span class="line">    <span class="comment">// any 是接口类型</span></span><br><span class="line">    Value      any</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 方法</span></span><br><span class="line"><span class="comment">// Next returns the next list element or nil.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Element)</span> <span class="title">Next</span><span class="params">()</span> *<span class="title">Element</span></span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Element)</span> <span class="title">Prev</span><span class="params">()</span> *<span class="title">Element</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="Basic-Paxos算法"><a href="#Basic-Paxos算法" class="headerlink" title="Basic Paxos算法"></a>Basic Paxos算法</h2><h3 id="决议的提出与批准"><a href="#决议的提出与批准" class="headerlink" title="决议的提出与批准"></a>决议的提出与批准</h3><ol>
+<li>prepare阶段：<ol>
+<li> proposer选择一个提案编号n并将prepare请求发送给acceptors中的一个多数派；</li>
+<li> acceptor收到prepare消息后，如果提案的编号大于它已经回复的所有prepare消息(回复消息表示接受accept)，则acceptor将自己上次接受的提案回复给proposer，并承诺不再回复小于n的提案；</li>
+</ol>
+</li>
+<li>批准阶段：<ol>
+<li> 当一个proposer收到了多数acceptors对prepare的回复后，就进入批准阶段。它要向回复prepare请求的acceptors发送accept请求，包括编号n和根据P2c决定的value（如果根据P2c没有已经接受的value，那么它可以自由决定value）。</li>
+<li> 在不违背自己向其他proposer的承诺的前提下，acceptor收到accept请求后即批准这个请求。</li>
+</ol>
+</li>
+</ol>
+<p>这个过程在任何时候中断都可以保证正确性。例如如果一个proposer发现已经有其他proposers提出了编号更高的提案，则有必要中断这个过程。因此为了优化，在上述prepare过程中，如果一个acceptor发现存在一个更高编号的提案，则需要通知proposer，提醒其中断这次提案。</p>
+<p>本质上就是一个这实际上退化为<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4" title="二阶段提交">二阶段提交</a>协议。</p>
+<h2 id="Multi-Paxos算法"><a href="#Multi-Paxos算法" class="headerlink" title="Multi-Paxos算法"></a>Multi-Paxos算法</h2><ul>
+<li>Basic Paxos</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Client   Proposer      Acceptor     Learner</span><br><span class="line">   |         |          |  |  |       |  | --- First Request ---</span><br><span class="line">   X--------&gt;|          |  |  |       |  |  Request</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Prepare(N)</span><br><span class="line">   |         |&lt;---------X--X--X       |  |  Promise(N,I,&#123;Va,Vb,Vc&#125;)</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Accept!(N,I,V)</span><br><span class="line">   |         |&lt;---------X--X--X------&gt;|-&gt;|  Accepted(N,I,V)</span><br><span class="line">   |&lt;---------------------------------X--X  Response</span><br><span class="line">   |         |          |  |  |       |  |</span><br></pre></td></tr></table></figure>
 
-<h2 id="List类型"><a href="#List类型" class="headerlink" title="List类型"></a>List类型</h2><p>List 用于表示双链表。<br>空列表可以用作 List 的零值。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> List <span class="keyword">struct</span> &#123;</span><br><span class="line">    root Element</span><br><span class="line">    <span class="built_in">len</span>  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    l := list.New()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尾部添加, 返回element</span></span><br><span class="line">    e1 := l.PushBack(<span class="string">&quot;canon&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 头部添加</span></span><br><span class="line">    e2 := l.PushFront(<span class="number">67</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尾部添加后保存元素句柄</span></span><br><span class="line">    element := l.PushBack(<span class="string">&quot;fist&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在fist之后添加high</span></span><br><span class="line">    l.InsertAfter(<span class="string">&quot;high&quot;</span>, element)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在fist之前添加noon</span></span><br><span class="line">    l.InsertBefore(<span class="string">&quot;noon&quot;</span>, element)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 移除指定元素, 返回value</span></span><br><span class="line">    l.Remove(element)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ----- 遍历 ------</span></span><br><span class="line">	<span class="keyword">for</span> i := l.Front(); i != <span class="literal">nil</span>; i = i.Next() &#123;</span><br><span class="line">	    fmt.Println(i.Value)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>跳过阶段1时的Multi-Paxos</li>
+</ul>
+<p>在这种情况下，Basic Paxos的后续实例(由I+1表示)使用相同的Leader，因此，包含在Prepare和Promise的阶段1(Basic Paxos协议的这些后续实例)将被跳过。注意，这里要求Leader应该是稳定的，即它不应该崩溃或改变。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Client   Proposer       Acceptor     Learner</span><br><span class="line">   |         |          |  |  |       |  |  --- Following Requests ---</span><br><span class="line">   X--------&gt;|          |  |  |       |  |  Request</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Accept!(N,I+1,W)</span><br><span class="line">   |         |&lt;---------X--X--X------&gt;|-&gt;|  Accepted(N,I+1,W)</span><br><span class="line">   |&lt;---------------------------------X--X  Response</span><br><span class="line">   |         |          |  |  |       |  |</span><br></pre></td></tr></table></figure>
 
+<h2 id="Raft算法"><a href="#Raft算法" class="headerlink" title="Raft算法"></a>Raft算法</h2><p><strong>Raft</strong>是一种用于替代<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Paxos" title="Paxos">Paxos</a>的<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%85%B1%E8%AD%98%E6%A9%9F%E5%88%B6" title="共识机制">共识</a>算法。相比于<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Paxos" title="Paxos">Paxos</a>，Raft的目标是提供更清晰的逻辑分工使得算法本身能被更好地理解，同时它安全性更高，并能提供一些额外的特性。</p>
+<p><a target="_blank" rel="noopener" href="https://thesecretlivesofdata.com/raft/">raft原理</a><br><a target="_blank" rel="noopener" href="https://raft.github.io/">raft-github</a></p>
+<p>在Raft集群（英语：Raft cluster）里，服务器可能会是这三种身份其中一个：<strong>领袖</strong>（英语：leader）、<strong>追随者</strong>（英语：follower），或是<strong>候选人</strong>（英语：candidate）。在正常情况下只会有一个领袖，其他都是追随者。而领袖会负责所有外部的请求，如果不是领袖的机器收到时，请求会被导到领袖。</p>
+<p>通常领袖会借由固定时间发送消息，也就是“心跳（英语：heartbeat）”，让追随者知道集群的领袖还在运作。而每个追随者都会设计超时机制（英语：timeout），当超过一定时间没有收到心跳（通常是150 ms或300 ms，集群就会进入选举状态。</p>
+<h3 id="领袖选举"><a href="#领袖选举" class="headerlink" title="领袖选举"></a>领袖选举</h3><p>在起始算法或领袖死机、断线的时候，就需要选举出新的领袖。<br>此时集群进入新的任期（英语：term）并开始选举，如果选举成功则新的领袖开始执行工作，反之则视此任期终止，开始新的任期并开始下一场选举。</p>
+<p>选举是由候选人发动的。当领袖的心跳超时的时候，追随者就会把自己的任期编号（英语：term counter）加一、宣告竞选、投自己一票、并向其他服务器拉票。每个服务器在每个任期只会投一票，固定投给最早拉票的服务器。</p>
+<p>如果候选人收到其他候选人的拉票、而且拉票的任期编号不小于自己的任期编号，就会自认落选，成为追随者，并认定来拉票的候选人为领袖。如果有候选人收到过半的选票就当选为新的领袖。如果超时仍没有选出新领袖，此任期自动终止，开始新的任期并开始下一场选举。</p>
+<p>Raft每个服务器的超时期限是随机的，这降低伺服务同时竞选的几率，也降低因两个竞选人得票都不过半而选举失败的几率。</p>
+<h3 id="记录复写"><a href="#记录复写" class="headerlink" title="记录复写"></a>记录复写</h3><p>整个集群有个复写的状态机（英语：state machine），可执行外来的指令。领袖接收指令，将之写入自己记录中的新指令部分，然后把指令转发给追随者。如果有追随者没反应，领袖会不断重发指令、直到每个追随者都成功将新指令写入记录为止。</p>
+<p>当领袖收到过半追随者确认写入的消息，就会把指令视为已存储（英语：committed）。当追随者发现指令状态变成已存储，就会在其状态机上执行该指令。</p>
 
     </div>
 
@@ -300,7 +336,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://hannokishi.link/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/" title="golang的list实现">https://hannokishi.link/2022/05/24/golang的list实现/</a>
+    <a href="https://hannokishi.link/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/" title="一致性算法">https://hannokishi.link/2022/07/28/一致性算法/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -311,7 +347,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/golang/" rel="tag"># golang</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
           </div>
 
         
@@ -320,13 +357,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2022/05/24/hello-world/" rel="prev" title="Hello World">
-      <i class="fa fa-chevron-left"></i> Hello World
+    <a href="/2022/07/27/%E5%89%8D%E7%BC%80%E6%A0%91/" rel="prev" title="前缀树">
+      <i class="fa fa-chevron-left"></i> 前缀树
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/" rel="next" title="存储与检索">
-      存储与检索 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -385,7 +419,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Element%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">Element类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#List%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">List类型</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">一致性模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Basic-Paxos%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">Basic Paxos算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%B3%E8%AE%AE%E7%9A%84%E6%8F%90%E5%87%BA%E4%B8%8E%E6%89%B9%E5%87%86"><span class="nav-number">2.1.</span> <span class="nav-text">决议的提出与批准</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Multi-Paxos%E7%AE%97%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">Multi-Paxos算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E7%AE%97%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">Raft算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%86%E8%A2%96%E9%80%89%E4%B8%BE"><span class="nav-number">4.1.</span> <span class="nav-text">领袖选举</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95%E5%A4%8D%E5%86%99"><span class="nav-number">4.2.</span> <span class="nav-text">记录复写</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
