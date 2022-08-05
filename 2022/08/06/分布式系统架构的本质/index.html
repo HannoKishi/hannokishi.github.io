@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/pawprint.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/pawprint.png">
+  <link rel="mask-icon" href="/images/pawprint.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"hannokishi.link","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="为什么需要分布式系统 增大系统容量 加强系统可用性">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式系统架构的本质">
+<meta property="og:url" content="https://hannokishi.link/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/index.html">
+<meta property="og:site_name" content="硝子の少年">
+<meta property="og:description" content="为什么需要分布式系统 增大系统容量 加强系统可用性">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://hannokishi.link/20220725195309.png">
+<meta property="og:image" content="https://hannokishi.link/20220725202848.png">
+<meta property="og:image" content="https://hannokishi.link/20220725203404.png">
+<meta property="article:published_time" content="2022-08-05T18:53:11.000Z">
+<meta property="article:modified_time" content="2022-08-05T18:53:11.000Z">
+<meta property="article:author" content="Hannokishi">
+<meta property="article:tag" content="分布式">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hannokishi.link/20220725195309.png">
+
+<link rel="canonical" href="https://hannokishi.link/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>分布式系统架构的本质 | 硝子の少年</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">硝子の少年</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">些細な話</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/hannokishi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://hannokishi.link/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Hannokishi">
+      <meta itemprop="description" content="一切合切放り出したい">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="硝子の少年">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分布式系统架构的本质
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-08-05 18:53:11" itemprop="dateCreated datePublished" datetime="2022-08-05T18:53:11Z">2022-08-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">分布式系统</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/%E6%80%BB%E8%BF%B0/" itemprop="url" rel="index"><span itemprop="name">总述</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h2 id="为什么需要分布式系统"><a href="#为什么需要分布式系统" class="headerlink" title="为什么需要分布式系统"></a>为什么需要分布式系统</h2><ul>
+<li>增大系统容量</li>
+<li>加强系统可用性<span id="more"></span>
+<!-- toc --></li>
+</ul>
+<p> <img src="/20220725195309.png"><br>也就是说，分布式系统架构的难点在于系统设计，以及管理和运维</p>
+<h3 id="SOA——基于服务的架构"><a href="#SOA——基于服务的架构" class="headerlink" title="SOA——基于服务的架构"></a>SOA——基于服务的架构</h3><p>SOA 架构是构造分布式计算应用程序的方法。它将应用程序功能作为服务发送给最终用户或者其他服务。<br>可重用，粒度合适，模块化，可组合，构件化以及有互操作性。符合开放标准（通用的或行业的）。服务的识别和分类，提供和发布，监控和跟踪。</p>
+<h2 id="分布式系统需要注意的问题"><a href="#分布式系统需要注意的问题" class="headerlink" title="分布式系统需要注意的问题"></a>分布式系统需要注意的问题</h2><h3 id="分布式系统中的不标准问题"><a href="#分布式系统中的不标准问题" class="headerlink" title="分布式系统中的不标准问题"></a>分布式系统中的不标准问题</h3><ul>
+<li>软件和应用不标准。</li>
+<li>通讯协议不标准。</li>
+<li>数据格式不标准。</li>
+<li>开发和运维的过程和方法不标准。</li>
+</ul>
+<h3 id="系统构架中的服务依赖性问题"><a href="#系统构架中的服务依赖性问题" class="headerlink" title="系统构架中的服务依赖性问题"></a>系统构架中的服务依赖性问题</h3><ul>
+<li>如果非关键业务被关键业务所依赖，会导致非关键业务变成一个关键业务。服务依赖</li>
+<li>服务依赖链中，出现“木桶短板效应”——整个 SLA 由最差的那个服务所决定。</li>
+</ul>
+<h3 id="故障发生概率更大"><a href="#故障发生概率更大" class="headerlink" title="故障发生概率更大"></a>故障发生概率更大</h3><p>在分布式系统中，因为使用的机器和服务会非常多，所以，故障发生的频率会比传统的单体应用更大。只不过，单体应用的故障影响面很大，而分布式系统中，虽然故障的影响面可以被隔离，但是因为机器和服务多，出故障的频率也会多。另一方面，因为管理复杂，而且没人知道整个架构中有什么，所以非常容易犯错误。</p>
+<h3 id="多层架构的运维复杂度更大"><a href="#多层架构的运维复杂度更大" class="headerlink" title="多层架构的运维复杂度更大"></a>多层架构的运维复杂度更大</h3><p>通常来说，我们可以把系统分成四层：</p>
+<ul>
+<li>基础层、平台层、应用层和接入层。基础层就是我们的机器、网络和存储设备等。</li>
+<li>平台层就是我们的中间件层，Tomcat、MySQL、Redis、Kafka 之类的软件。</li>
+<li>应用层就是我们的业务软件，比如，各种功能的服务。</li>
+<li>接入层就是接入用户请求的网关、负载均衡或是 CDN、DNS 这样的东西。</li>
+</ul>
+<h2 id="分布式系统的目的"><a href="#分布式系统的目的" class="headerlink" title="分布式系统的目的"></a>分布式系统的目的</h2><p>正如我们前面所说的，构建分布式系统的目的是增加系统容量，提高系统的可用性，转换成技术方面，也就是完成下面两件事。</p>
+<ul>
+<li>大流量处理：通过集群技术把大规模并发请求的负载分散到不同的机器上。</li>
+<li>关键业务保护：提高后台服务的可用性，把故障隔离起来阻止多米诺骨牌效应（雪崩效应）。如果流量过大，需要对业务降级，以保护关键业务流转。</li>
+</ul>
+<p>说白了就是干两件事。一是提高整体架构的吞吐量，服务更多的并发和流量，二是为了提高系统的稳定性，让系统的可用性更高。</p>
+<h3 id="提高架构的性能"><a href="#提高架构的性能" class="headerlink" title="提高架构的性能"></a>提高架构的性能</h3><p><img src="/20220725202848.png"></p>
+<ul>
+<li><strong>缓存系统</strong>：对于分布式系统下的缓存系统，需要的是一个缓存集群。这其中需要一个 Proxy 来做缓存的分片和路由。</li>
+<li><strong>负载均衡系统</strong>：负载均衡系统是水平扩展的关键技术，它可以使用多台机器来共同分担一部分流量请求。</li>
+<li><strong>异步调用</strong>：异步系统主要通过消息队列来对请求做排队处理，这样可以把前端的请求的峰值给“削平”了，而后端通过自己能够处理的速度来处理请求。这样可以增加系统的吞吐量，但是实时性就差很多了。同时，还会引入消息丢失的问题，所以要对消息做持久化，这会造成“有状态”的结点，从而增加了服务调度的难度。</li>
+<li><strong>数据分区和数据镜像</strong>：数据分区是把数据按一定的方式分成多个区；而数据镜像是把一个数据库镜像成多份一样的数据，这样就不需要数据路由的中间件了。初期一般采用读写分离的方式。</li>
+</ul>
+<h3 id="提高架构的稳定性"><a href="#提高架构的稳定性" class="headerlink" title="提高架构的稳定性"></a>提高架构的稳定性</h3><p><img src="/20220725203404.png"></p>
+<ul>
+<li><strong>服务拆分</strong>：1.隔离故障；2.重用服务模块（但是会带来服务调用见的依赖问题）</li>
+<li><strong>服务冗余</strong>：服务冗余是为了去除单点故障，并可以支持服务的弹性伸缩，以及故障迁移。</li>
+<li><strong>限流降级</strong>：当系统实在扛不住压力时，只能通过限流或者功能降级的方式来停掉一部分服务，或是拒绝一部分用户，以确保整个架构不会挂掉。</li>
+<li><strong>高可用架构</strong>：总之，就是为了不出单点故障。</li>
+<li><strong>高可用运维</strong>：高可用运维指的是 DevOps 中的 CI/CD（持续集成 / 持续部署）。</li>
+</ul>
+<h3 id="分布式服务的关键技术"><a href="#分布式服务的关键技术" class="headerlink" title="分布式服务的关键技术"></a>分布式服务的关键技术</h3><ul>
+<li><strong>服务治理</strong>：服务拆分、服务调用、服务发现、服务依赖、服务的关键度定义</li>
+<li><strong>构架软件管理</strong>: </li>
+<li><strong>DevOps</strong>:</li>
+<li><strong>自动化运维</strong>:</li>
+<li><strong>资源调度管理</strong></li>
+<li><strong>整体构架监控</strong></li>
+<li><strong>流量控制</strong><br>又可以分为：全栈系统监控，服务/资源调度，流量调度，状态/数据调度；开发和运维的自动化。</li>
+</ul>
+<h2 id="全栈系统监控"><a href="#全栈系统监控" class="headerlink" title="全栈系统监控"></a>全栈系统监控</h2><h3 id="多层监控"><a href="#多层监控" class="headerlink" title="多层监控"></a>多层监控</h3><ul>
+<li><strong>基础层</strong>：监控主机和底层资源。（cpu, 内存, 网络吞吐, 硬盘I/O, 硬盘使用）</li>
+<li><strong>中间层</strong>：中间件层的监控。(Nginx, Redis, MySQL, Kafka)</li>
+<li><strong>应用层</strong>：监控应用层的使用。（http访问吞吐量, 响应时间, 返回码）</li>
+</ul>
+<p>监控标准化: </p>
+<ul>
+<li>日志数据结构化</li>
+<li>监控数据格式化</li>
+<li>统一的监控平台</li>
+<li>统一的日志分析</li>
+</ul>
+<p>好的监控系统需要: </p>
+<ul>
+<li>服务调用链跟踪</li>
+<li>服务调用时长分布</li>
+<li>服务top n视图</li>
+<li>数据库操作关联</li>
+<li>服务资源跟踪</li>
+</ul>
+<h2 id="服务治理"><a href="#服务治理" class="headerlink" title="服务治理"></a>服务治理</h2><h3 id="服务关键程度和服务的依赖关系"><a href="#服务关键程度和服务的依赖关系" class="headerlink" title="服务关键程度和服务的依赖关系"></a>服务关键程度和服务的依赖关系</h3><p>微服务是服务依赖最优解的上限，而服务依赖的下限是千万不要有依赖环。如果系统架构中有服务依赖环，那么表明你的架构设计是错误的。循环依赖有很多的副作用，最大的问题是这是一种极强的耦合，会导致服务部署相当复杂和难解，而且会导致无穷尽的递归故障和一些你意想不到的问题。</p>
+<h3 id="服务状态和生命周期的管理"><a href="#服务状态和生命周期的管理" class="headerlink" title="服务状态和生命周期的管理"></a>服务状态和生命周期的管理</h3><p>我们还需要有一个<strong>服务发现的中间件</strong>，这个中间件是非常非常关键的。因为这个“架构城市”是非常动态的，有的服务会新加进来，有的会离开，有的会增加更多的实例，有的会减少，有的服务在维护过程中（发布、伸缩等），所以我们需要有一个服务注册中心，来知道这么几个事。</p>
+<h3 id="整个构架的版本管理"><a href="#整个构架的版本管理" class="headerlink" title="整个构架的版本管理"></a>整个构架的版本管理</h3><p>除了各个项目的版本管理之外，还需要在上面再盖一层版本管理。</p>
+<h3 id="资源-服务调度"><a href="#资源-服务调度" class="headerlink" title="资源/服务调度"></a>资源/服务调度</h3><h4 id="服务状态的维持和拟合"><a href="#服务状态的维持和拟合" class="headerlink" title="服务状态的维持和拟合"></a>服务状态的维持和拟合</h4><p>比如，当需要对集群进行 Scale 的时候，我们需要：<br>先扩展出几个结点；<br>再往上部署服务；<br>然后启动服务；<br>再检查服务的健康情况；<br>最后把新扩展出来的服务实例加入服务发现中提供服务。</p>
+<h4 id="服务的弹性伸缩和故障迁移"><a href="#服务的弹性伸缩和故障迁移" class="headerlink" title="服务的弹性伸缩和故障迁移"></a>服务的弹性伸缩和故障迁移</h4><p>两种故障迁移模式：</p>
+<ul>
+<li>宠物模式：就是一定要救活，主要是对于 stateful 的服务。</li>
+<li>奶牛模式：就是不用救活了，重新生成一个实例。</li>
+</ul>
+<h4 id="服务工作流和编排"><a href="#服务工作流和编排" class="headerlink" title="服务工作流和编排"></a>服务工作流和编排</h4><ul>
+<li>Choreography : 相互协作</li>
+<li>Orchestration : 指挥机制</li>
+<li>微服务: 消息队列来做编排</li>
+</ul>
+<h2 id="流量与数据调度"><a href="#流量与数据调度" class="headerlink" title="流量与数据调度"></a>流量与数据调度</h2><h3 id="主要功能："><a href="#主要功能：" class="headerlink" title="主要功能："></a>主要功能：</h3><ul>
+<li>依据系统运行的情况，自动地进行流量调度</li>
+<li>让系统应对爆品等突发事件时，在弹性计算扩缩容的较长时间窗口内或底层资源消耗殆尽的情况下，保护系统平稳运行。<br>还需完成：</li>
+<li>服务流控: 服务发现、服务路由、服务降级、服务熔断、服务保护等。</li>
+<li>流量控制: 负载均衡、流量分配、流量控制、异地灾备（多活）等。</li>
+<li>流量管理: 协议转换、请求校验、数据缓存、数据计算等。</li>
+</ul>
+<p>SLA：服务等级协议（简称：_SLA_，全称：_service level agreement_）<br>PaaS：是（_Platform as a Service_）的缩写，是指平台即服务。 把服务器平台作为一种服务提供的商业模式。<br>_IaaS_（Infrastructure as a Service），即基础设施即服务。</p>
+<h2 id="PaaS平台的本质"><a href="#PaaS平台的本质" class="headerlink" title="PaaS平台的本质"></a>PaaS平台的本质</h2><ul>
+<li>服务化是 PaaS 的本质。软件模块重用，服务治理，对外提供能力是 PaaS 的本质。</li>
+<li>分布式是 PaaS 的根本特性。多租户隔离、高可用、服务编排是 PaaS 的基本特性。</li>
+<li>自动化是 PaaS 的灵魂。自动化部署安装运维，自动化伸缩调度是 PaaS 的关键。</li>
+</ul>
+<p>总结一下，一个完整的 PaaS 平台会包括以下几部分。</p>
+<ul>
+<li>PaaS 调度层 – 主要是 PaaS 的自动化和分布式对于高可用高性能的管理。</li>
+<li>PaaS 能力服务层 – 主要是 PaaS 真正提供给用户的服务和能力。</li>
+<li>PaaS 的流量调度 – 主要是与流量调度相关的东西，包括对高并发的管理。</li>
+<li>PaaS 的运营管理 – 软件资源库、软件接入、认证和开放平台门户。PaaS 的运维管理 – 主要是 DevOps 相关的东西。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hannokishi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://hannokishi.link/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/" title="分布式系统架构的本质">https://hannokishi.link/2022/08/06/分布式系统架构的本质/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/" rel="prev" title="一致性算法">
+      <i class="fa fa-chevron-left"></i> 一致性算法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F"><span class="nav-number">1.</span> <span class="nav-text">为什么需要分布式系统</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SOA%E2%80%94%E2%80%94%E5%9F%BA%E4%BA%8E%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9E%B6%E6%9E%84"><span class="nav-number">1.1.</span> <span class="nav-text">SOA——基于服务的架构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E9%9C%80%E8%A6%81%E6%B3%A8%E6%84%8F%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">分布式系统需要注意的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E4%B8%8D%E6%A0%87%E5%87%86%E9%97%AE%E9%A2%98"><span class="nav-number">2.1.</span> <span class="nav-text">分布式系统中的不标准问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E6%9E%84%E6%9E%B6%E4%B8%AD%E7%9A%84%E6%9C%8D%E5%8A%A1%E4%BE%9D%E8%B5%96%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-number">2.2.</span> <span class="nav-text">系统构架中的服务依赖性问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%85%E9%9A%9C%E5%8F%91%E7%94%9F%E6%A6%82%E7%8E%87%E6%9B%B4%E5%A4%A7"><span class="nav-number">2.3.</span> <span class="nav-text">故障发生概率更大</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E5%B1%82%E6%9E%B6%E6%9E%84%E7%9A%84%E8%BF%90%E7%BB%B4%E5%A4%8D%E6%9D%82%E5%BA%A6%E6%9B%B4%E5%A4%A7"><span class="nav-number">2.4.</span> <span class="nav-text">多层架构的运维复杂度更大</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84%E7%9B%AE%E7%9A%84"><span class="nav-number">3.</span> <span class="nav-text">分布式系统的目的</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%90%E9%AB%98%E6%9E%B6%E6%9E%84%E7%9A%84%E6%80%A7%E8%83%BD"><span class="nav-number">3.1.</span> <span class="nav-text">提高架构的性能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%90%E9%AB%98%E6%9E%B6%E6%9E%84%E7%9A%84%E7%A8%B3%E5%AE%9A%E6%80%A7"><span class="nav-number">3.2.</span> <span class="nav-text">提高架构的稳定性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%85%B3%E9%94%AE%E6%8A%80%E6%9C%AF"><span class="nav-number">3.3.</span> <span class="nav-text">分布式服务的关键技术</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A8%E6%A0%88%E7%B3%BB%E7%BB%9F%E7%9B%91%E6%8E%A7"><span class="nav-number">4.</span> <span class="nav-text">全栈系统监控</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E5%B1%82%E7%9B%91%E6%8E%A7"><span class="nav-number">4.1.</span> <span class="nav-text">多层监控</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86"><span class="nav-number">5.</span> <span class="nav-text">服务治理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%85%B3%E9%94%AE%E7%A8%8B%E5%BA%A6%E5%92%8C%E6%9C%8D%E5%8A%A1%E7%9A%84%E4%BE%9D%E8%B5%96%E5%85%B3%E7%B3%BB"><span class="nav-number">5.1.</span> <span class="nav-text">服务关键程度和服务的依赖关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%8A%B6%E6%80%81%E5%92%8C%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E7%9A%84%E7%AE%A1%E7%90%86"><span class="nav-number">5.2.</span> <span class="nav-text">服务状态和生命周期的管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E4%B8%AA%E6%9E%84%E6%9E%B6%E7%9A%84%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86"><span class="nav-number">5.3.</span> <span class="nav-text">整个构架的版本管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B5%84%E6%BA%90-%E6%9C%8D%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="nav-number">5.4.</span> <span class="nav-text">资源&#x2F;服务调度</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%8A%B6%E6%80%81%E7%9A%84%E7%BB%B4%E6%8C%81%E5%92%8C%E6%8B%9F%E5%90%88"><span class="nav-number">5.4.1.</span> <span class="nav-text">服务状态的维持和拟合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%BC%B9%E6%80%A7%E4%BC%B8%E7%BC%A9%E5%92%8C%E6%95%85%E9%9A%9C%E8%BF%81%E7%A7%BB"><span class="nav-number">5.4.2.</span> <span class="nav-text">服务的弹性伸缩和故障迁移</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%92%8C%E7%BC%96%E6%8E%92"><span class="nav-number">5.4.3.</span> <span class="nav-text">服务工作流和编排</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%81%E9%87%8F%E4%B8%8E%E6%95%B0%E6%8D%AE%E8%B0%83%E5%BA%A6"><span class="nav-number">6.</span> <span class="nav-text">流量与数据调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E5%8A%9F%E8%83%BD%EF%BC%9A"><span class="nav-number">6.1.</span> <span class="nav-text">主要功能：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PaaS%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="nav-number">7.</span> <span class="nav-text">PaaS平台的本质</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hannokishi"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Hannokishi</p>
+  <div class="site-description" itemprop="description">一切合切放り出したい</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">27</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hannokishi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hannokishi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:huangenming1996@gmail.com" title="E-Mail → mailto:huangenming1996@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+      <!--网易云播放器-->
+      <div id="music163player">
+          <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=280 height=86 src="//music.163.com/outchain/player?type=2&id=1331357732&auto=1&height=66">
+          </iframe>
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hannokishi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,0' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
