@@ -613,6 +613,34 @@
       </tags>
   </entry>
   <entry>
+    <title>golang并查集</title>
+    <url>/2022/07/27/golang%E5%B9%B6%E6%9F%A5%E9%9B%86/</url>
+    <content><![CDATA[<hr>
+<p>并查集被很多OIer认为是最简洁而优雅的数据结构之一，主要用于解决一些<strong>元素分组</strong>的问题。它管理一系列<strong>不相交的集合</strong>，并支持两种操作：</p>
+<ul>
+<li>  <strong>合并</strong>（Union）：把两个不相交的集合合并为一个集合。</li>
+<li>  <strong>查询</strong>（Find）：查询两个元素是否在同一个集合中。<br><a href="https://zhuanlan.zhihu.com/p/93647900">并查集-知乎</a></li>
+</ul>
+<span id="more"></span>
+<!-- toc -->
+<h2 id="并查集简介"><a href="#并查集简介" class="headerlink" title="并查集简介"></a>并查集简介</h2><p><strong>参考文章</strong></p>
+<p>当然，这样的定义未免太过学术化，看完后恐怕不太能理解它具体有什么用。所以我们先来看看并查集最直接的一个应用场景：<strong>亲戚问题</strong>。</p>
+<p>这是一个<strong>树</strong>状的结构，要寻找集合的代表元素，只需要一层一层往上访问<strong>父节点</strong>（图中箭头所指的圆），直达树的<strong>根节点</strong>（图中橙色的圆）即可。根节点的父节点是它自己。</p>
+<p><img src="/2022/07/27/golang%E5%B9%B6%E6%9F%A5%E9%9B%86/20220726164121.png" alt="并查集结构"></p>
+<h2 id="并查集golang实现"><a href="#并查集golang实现" class="headerlink" title="并查集golang实现"></a>并查集golang实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">输入:</span><br><span class="line">关系</span><br><span class="line">[2,3],[1,3],[4,2]</span><br><span class="line">输出：</span><br><span class="line">1（1组关系）</span><br></pre></td></tr></table></figure>
+
+<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> main  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;fmt&quot;</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//leetcode submit region begin(Prohibit modification and deletion)  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">numIslands</span><span class="params">(grid [][]<span class="keyword">byte</span>)</span> <span class="title">int</span></span> &#123;  </span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//leetcode submit region end(Prohibit modification and deletion)  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">type</span> DisjointSet <span class="keyword">struct</span> &#123;  </span><br><span class="line">   fa     []<span class="keyword">int</span> <span class="comment">// 每个节点的父节点, 初始化成功时为自己  </span></span><br><span class="line">   height []<span class="keyword">int</span> <span class="comment">// 该节点的高度  </span></span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 初始化  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">init</span><span class="params">(n <span class="keyword">int</span>)</span></span> &#123;  </span><br><span class="line">   d.fa = <span class="built_in">make</span>([]<span class="keyword">int</span>, n+<span class="number">1</span>)  </span><br><span class="line">   d.height = <span class="built_in">make</span>([]<span class="keyword">int</span>, n+<span class="number">1</span>)  </span><br><span class="line">   <span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= n; i++ &#123;  </span><br><span class="line">      d.fa[i] = i <span class="comment">// 表示自己为一个集合  </span></span><br><span class="line">      d.height[i] = <span class="number">1</span>  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查找父节点  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">find</span><span class="params">(i <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;  </span><br><span class="line">   <span class="comment">// 父节点是自己则代表找到  </span></span><br><span class="line">   <span class="keyword">if</span> i == d.fa[i] &#123;  </span><br><span class="line">      <span class="keyword">return</span> i  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="comment">// 递归查找  </span></span><br><span class="line">   d.fa[i] = d.find(d.fa[i])  </span><br><span class="line">   <span class="comment">// 优化路径(降低树的高度)  </span></span><br><span class="line">   <span class="keyword">return</span> d.fa[i]  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 合并两个集合  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">merge</span><span class="params">(i, j <span class="keyword">int</span>)</span></span> &#123;  </span><br><span class="line">   <span class="comment">// 这里有个优化, 谁合并谁, 矮的往高合并  </span></span><br><span class="line">   f1, f2 := d.find(i), d.find(j)  </span><br><span class="line">   h1, h2 := d.height[f1], d.height[f2]  </span><br><span class="line">   <span class="keyword">if</span> h1 &lt; h2 &#123;  </span><br><span class="line">      d.fa[f1] = f2  </span><br><span class="line">   &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">      d.fa[f2] = f1  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">if</span> h1 == h2 &amp;&amp; f1 != f2 &#123;  </span><br><span class="line">      d.height[f1]++  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 计算集合个数  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">count</span><span class="params">()</span> <span class="params">(res <span class="keyword">int</span>)</span></span> &#123;  </span><br><span class="line">   <span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="built_in">len</span>(d.fa); i++ &#123;  </span><br><span class="line">      <span class="keyword">if</span> d.fa[i] == i &#123;  </span><br><span class="line">         res++  </span><br><span class="line">      &#125;  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> res  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;  </span><br><span class="line">   parent := <span class="built_in">new</span>(DisjointSet)  </span><br><span class="line">   parent.init(<span class="number">10</span>)  </span><br><span class="line">   parent.merge(<span class="number">1</span>, <span class="number">2</span>)  </span><br><span class="line">   parent.merge(<span class="number">2</span>, <span class="number">3</span>)  </span><br><span class="line">   parent.merge(<span class="number">1</span>, <span class="number">3</span>)  </span><br><span class="line">   fmt.Println(parent.count())  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>数据结构&amp;算法</category>
+        <category>数据结构</category>
+        <category>并查集</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+        <tag>算法</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>golang的大小堆heap实现</title>
     <url>/2022/05/04/golang%E7%9A%84%E5%A4%A7%E5%B0%8F%E5%A0%86heap%E5%AE%9E%E7%8E%B0/</url>
     <content><![CDATA[<p>在leetcode刷题时候，会用到大小堆的数据结构。在go语言中，大小堆的实现是有现成的接口的。</p>
@@ -649,6 +677,201 @@
       </categories>
       <tags>
         <tag>golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>golang的list实现</title>
+    <url>/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/</url>
+    <content><![CDATA[<p>在leetcode刷题时候，会用到链表的数据结构。在go语言中，链表的实现是有现成的接口的。</p>
+<span id="more"></span>
+
+<!-- toc -->
+
+<p>在Go语言中，列表使用 container/list 包来实现，内部的实现原理是双链表，列表能够高效地进行任意位置的元素插入和删除操作。</p>
+<ul>
+<li><code>container/list</code>包中导入<br>list 包实现了一个双链表（doubly linked list）。<h2 id="Element类型"><a href="#Element类型" class="headerlink" title="Element类型"></a>Element类型</h2>Element 用于代表双链表的元素</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Element <span class="keyword">struct</span> &#123;</span><br><span class="line">    next, prev *Element</span><br><span class="line">    list       *List</span><br><span class="line">    <span class="comment">// any 是接口类型</span></span><br><span class="line">    Value      any</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 方法</span></span><br><span class="line"><span class="comment">// Next returns the next list element or nil.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Element)</span> <span class="title">Next</span><span class="params">()</span> *<span class="title">Element</span></span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Element)</span> <span class="title">Prev</span><span class="params">()</span> *<span class="title">Element</span></span></span><br></pre></td></tr></table></figure>
+
+<h2 id="List类型"><a href="#List类型" class="headerlink" title="List类型"></a>List类型</h2><p>List 用于表示双链表。<br>空列表可以用作 List 的零值。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> List <span class="keyword">struct</span> &#123;</span><br><span class="line">    root Element</span><br><span class="line">    <span class="built_in">len</span>  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    l := list.New()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尾部添加, 返回element</span></span><br><span class="line">    e1 := l.PushBack(<span class="string">&quot;canon&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 头部添加</span></span><br><span class="line">    e2 := l.PushFront(<span class="number">67</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尾部添加后保存元素句柄</span></span><br><span class="line">    element := l.PushBack(<span class="string">&quot;fist&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在fist之后添加high</span></span><br><span class="line">    l.InsertAfter(<span class="string">&quot;high&quot;</span>, element)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在fist之前添加noon</span></span><br><span class="line">    l.InsertBefore(<span class="string">&quot;noon&quot;</span>, element)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 移除指定元素, 返回value</span></span><br><span class="line">    l.Remove(element)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ----- 遍历 ------</span></span><br><span class="line">	<span class="keyword">for</span> i := l.Front(); i != <span class="literal">nil</span>; i = i.Next() &#123;</span><br><span class="line">	    fmt.Println(i.Value)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>golang</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>golang的错误类型</title>
+    <url>/2022/02/14/golang%E7%9A%84%E9%94%99%E8%AF%AF%E7%B1%BB%E5%9E%8B/</url>
+    <content><![CDATA[<hr>
+<p>作为golang语言的初心者，很多go的常用接口熟悉结构体都需要仔细看看源码，避免踩坑。目前重构代码用到了自己写的错误类和wrap相关函数对基层错误进行包装和unwrap函数对错误类进行递归拆解，但是写起来就是很不美观，强迫症。学习下优雅的处理错误吧。</p>
+<span id="more"></span>
+<!-- toc -->
+
+<p>[toc]</p>
+<h2 id="golang的错误类型error"><a href="#golang的错误类型error" class="headerlink" title="golang的错误类型error"></a>golang的错误类型<strong>error</strong></h2><p><strong>Golang</strong> 中的错误也是一种类型。错误用内置的 <code>error</code> 类型表示。就像其他类型，如 <code>int</code>，<code>float64</code> 等。</p>
+<p>错误值可以存储在变量中，也可以从函数中返回，等等。</p>
+<h2 id="error类型源码"><a href="#error类型源码" class="headerlink" title="error类型源码"></a>error类型源码</h2><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/builtin/builtin.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// The error built-in interface type is the conventional interface for</span></span><br><span class="line"><span class="comment">// representing an error condition, with the nil value representing no error.</span></span><br><span class="line"><span class="keyword">type</span> error <span class="keyword">interface</span> &#123;</span><br><span class="line">    Error() <span class="keyword">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>error</code> 是一个接口类型，它包含一个 <code>Error()</code> 方法，返回值为 <code>string</code>。任何实现这个接口的类型都可以作为一个错误使用，Error 这个方法提供了对错误的描述。<br>ps: <code>nil</code>代表没有错误</p>
+<ul>
+<li>实例<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">f, err := os.Open(<span class="string">&quot;/test.txt&quot;</span>)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    fmt.Println(<span class="string">&quot;open failed, err:&quot;</span>, err)</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line">fmt.Println(<span class="string">&quot;file is ：&quot;</span>, f)</span><br></pre></td></tr></table></figure>
+当执行打印错误语句时，fmt 包会自动调用 <code>err.Error()</code> 函数来打印字符串。</li>
+</ul>
+<h2 id="error的创建"><a href="#error的创建" class="headerlink" title="error的创建"></a>error的创建</h2><p>创建方式有两种</p>
+<ul>
+<li>  errors.New()</li>
+<li>  fmt.Errorf()</li>
+</ul>
+<h3 id="errors-New-函数-errorString类型"><a href="#errors-New-函数-errorString类型" class="headerlink" title="errors.New()函数 - errorString类型"></a>errors.New()函数 - errorString类型</h3><ul>
+<li>src/errors/errors.go</li>
+<li>源码<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/errors/errors.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// New returns an error that formats as the given text.</span></span><br><span class="line"><span class="comment">// Each call to New returns a distinct error value even if the text is identical.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(text <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;errorString&#123;text&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// errorString is a trivial implementation of error.</span></span><br><span class="line"><span class="keyword">type</span> errorString <span class="keyword">struct</span> &#123;</span><br><span class="line">    s <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *errorString)</span> <span class="title">Error</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+New () 函数返回一个错误，该错误的格式为给定的文本。<br>即使文本相同，每次对 New 的调用也会返回一个不同的错误值。</li>
+</ul>
+<p>其中 errorString 是一个结构体，只有一个 string 类型的字段 s，并且实现了唯一的方法：Error()</p>
+<ul>
+<li>例子<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 1.errors.New() 创建一个 error</span></span><br><span class="line">err1 := errors.New(<span class="string">&quot;这是 errors.New() 创建的错误&quot;</span>)</span><br><span class="line">fmt.Printf(<span class="string">&quot;err1 错误类型：%T，错误为：%v\n&quot;</span>, err1, err1)</span><br><span class="line">err1 错误类型：*errors.errorString，错误为：这是 errors.New() 创建的错误</span><br></pre></td></tr></table></figure>
+可以看到，错误类型是 <code>errorString</code> 指针，前面的 <code>errors.</code> 表明了其在 errors 包下。</li>
+</ul>
+<h3 id="fmt-Errorf-函数-errorString类型和wrapError类型"><a href="#fmt-Errorf-函数-errorString类型和wrapError类型" class="headerlink" title="fmt.Errorf()函数 - errorString类型和wrapError类型"></a>fmt.Errorf()函数 - errorString类型和wrapError类型</h3><ul>
+<li><p>源码</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/fmt/errors.go</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Errorf</span><span class="params">(format <span class="keyword">string</span>, a ...<span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    p := newPrinter()</span><br><span class="line">    p.wrapErrs = <span class="literal">true</span></span><br><span class="line">    p.doPrintf(format, a)</span><br><span class="line">    s := <span class="keyword">string</span>(p.buf)</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="keyword">if</span> p.wrappedErr == <span class="literal">nil</span> &#123;</span><br><span class="line">        err = errors.New(s)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        err = &amp;wrapError&#123;s, p.wrappedErr&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    p.free()</span><br><span class="line">    <span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过源码可以看到，<code>p.wrappedErr</code> 为 <code>nil</code> 的时候，会调用 <code>errors.New()</code> 来创建错误。<br>所以fmt.Errorf()函数创建的错误类型也为<code>errors.errorString</code></p>
+</li>
+<li><p>例子</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 2.fmt.Errorf()</span></span><br><span class="line">err2 := fmt.Errorf(<span class="string">&quot;这个 fmt.Errorf() 创建的错误,错误编码为：%d&quot;</span>, <span class="number">404</span>)</span><br><span class="line">fmt.Printf(<span class="string">&quot;err2 错误类型：%T，错误为：%v\n&quot;</span>, err2, err2)</span><br><span class="line"><span class="comment">// 输出</span></span><br><span class="line">err2 错误类型：*errors.errorString，错误为：这个 fmt.Errorf() 创建的错误,错误编码为：<span class="number">404</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="fmt-wrapError"><a href="#fmt-wrapError" class="headerlink" title="fmt.wrapError"></a>fmt.wrapError</h4><ul>
+<li>例子<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 3. go 1.13 新增加的错误处理特性  %w</span></span><br><span class="line">err3 := fmt.Errorf(<span class="string">&quot;err3: %w&quot;</span>, err2)  <span class="comment">// err3包裹err2错误</span></span><br><span class="line">fmt.Printf(<span class="string">&quot;err3 错误类型：%T，错误为：%v\n&quot;</span>, err3, err3)</span><br><span class="line"><span class="comment">// 输出</span></span><br><span class="line">err3 错误类型：*fmt.wrapError，错误为：err3: 这个 fmt.Errorf() 创建的错误,错误编码为：<span class="number">404</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="newPrinter结构体"><a href="#newPrinter结构体" class="headerlink" title="newPrinter结构体"></a>newPrinter结构体</h4><ul>
+<li>源码<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/fmt/print.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// newPrinter allocates a new pp struct or grabs a cached one.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newPrinter</span><span class="params">()</span> *<span class="title">pp</span></span> &#123;</span><br><span class="line">    p := ppFree.Get().(*pp)</span><br><span class="line">    p.panicking = <span class="literal">false</span></span><br><span class="line">    p.erroring = <span class="literal">false</span></span><br><span class="line">    p.wrapErrs = <span class="literal">false</span></span><br><span class="line">    p.fmt.init(&amp;p.buf)</span><br><span class="line">    <span class="keyword">return</span> p</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// src/fmt/print.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// pp is used to store a printer&#x27;s state and is reused with sync.Pool to avoid allocations.</span></span><br><span class="line"><span class="keyword">type</span> pp <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// wrapErrs is set when the format string may contain a %w verb.</span></span><br><span class="line">    wrapErrs <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// wrappedErr records the target of the %w verb.</span></span><br><span class="line">    wrappedErr error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<code>newPrinter()</code>生成一个pp结构体，pp结构体有wrapErrs和wrappedErr两个成员。</li>
+<li><code>wrapErrs</code><ul>
+<li>bool 类型，当格式字符串包含<code>％w</code> 动词时，将赋值为 true</li>
+</ul>
+</li>
+<li><code>wrappedErr</code><ul>
+<li>error 类型，记录<code>％w</code> 动词的目标，即例子的 <code>err2</code></li>
+</ul>
+</li>
+</ul>
+<p>在函数fmt.Errorf()中<code>p.wrappedErr</code>不为空则会调用生成一个<code>wrapErrors</code>结构体</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">err = &amp;wrapError&#123;s, p.wrappedErr&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="fmt-wrapError分析"><a href="#fmt-wrapError分析" class="headerlink" title="fmt.wrapError分析"></a>fmt.wrapError分析</h3><ul>
+<li>源码<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/fmt/errors.go</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> wrapError <span class="keyword">struct</span> &#123;</span><br><span class="line">    msg <span class="keyword">string</span></span><br><span class="line">    err error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *wrapError)</span> <span class="title">Error</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.msg</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *wrapError)</span> <span class="title">Unwrap</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>msg, <code>string</code>类型</li>
+<li>err <code>error</code>类型</li>
+</ul>
+<p>实现了两个方法：</p>
+<p>Error ()，也说明 wrapError 结构体实现了 error 接口，是一个 error 类型<br>Unwrap ()，作用是返回原错误值，没有自定义的 msg 了。也就是说拆开了一个被包装的 error。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>总结一下吧，Golang 中创建错误有两种方式：<br>第一种：errors.New() 函数，其返回值类型为 *errors.errorString。</p>
+<p>第二种：fmt.Errorf() 函数<br>当使用 fmt.Errorf() 来创建错误时，核心有以下两点：</p>
+<p>错误描述中不包含 %w 时，p.wrappedErr 为 nil，所以底层也是调用 errors.New() 创建错误。因此错误类型就是 *errors.errorString。</p>
+<p>错误描述中包含%w 时，p.wrappedErr 不为 nil，所以底层实例化 wrapError 结构体指针。 因此错误类型是 *fmt.wrapError，可以理解为包裹错误类型。</p>
+]]></content>
+      <categories>
+        <category>语言学习</category>
+        <category>golang</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+        <tag>源码阅读</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>go的切片和指针</title>
+    <url>/2022/06/17/go%E7%9A%84%E5%88%87%E7%89%87%E5%92%8C%E6%8C%87%E9%92%88/</url>
+    <content><![CDATA[<hr>
+<p>切片本身并不是动态数组或者数组指针。它内部实现的数据结构通过指针引用底层数组，设定相关属性将数据读写操作限定在指定的区域内。<strong>切片本身是一个只读对象，其工作机制类似数组指针的一种封装</strong>。</p>
+<span id="more"></span>
+<!-- toc -->
+
+<p>[toc]</p>
+<p><a href="https://halfrost.com/go_slice/">参考文章</a></p>
+<h2 id="go语言指针"><a href="#go语言指针" class="headerlink" title="go语言指针"></a>go语言指针</h2><p>Go中的指针及与指针对指针的操作主要有以下三种：</p>
+<ul>
+<li><p>一普通的指针类型，例如 var intptr *T，定义一个T类型指针变量。</p>
+</li>
+<li><p>二内置类型uintptr，本质是一个无符号的整型，它的长度是跟平台相关的，它的长度可以用来保存一个指针地址。</p>
+</li>
+<li><p>三是unsafe包提供的Pointer，表示可以指向任意类型的指针。</p>
+</li>
+</ul>
+<h3 id="普通指针"><a href="#普通指针" class="headerlink" title="普通指针"></a>普通指针</h3><p>通过引用来修改值</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">count := <span class="number">1</span></span><br><span class="line">Counter(&amp;count)</span><br><span class="line">fmt.Println(count)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Counter</span><span class="params">(count *<span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">    *count++</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="uintptr"><a href="#uintptr" class="headerlink" title="uintptr"></a>uintptr</h3><p>uintptr用来进行指针计算，因为它是整型，所以很容易计算出下一个指针所指向的位置。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// uintptr is an integer type that is large enough to hold the bit pattern of  </span></span><br><span class="line"><span class="comment">// any pointer. </span></span><br><span class="line"><span class="keyword">type</span> <span class="keyword">uintptr</span> <span class="keyword">uintptr</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// eg:</span></span><br><span class="line">n := <span class="number">10</span></span><br><span class="line"></span><br><span class="line">b := <span class="built_in">make</span>([]<span class="keyword">int</span>, n)</span><br><span class="line"><span class="keyword">for</span> i:= <span class="number">0</span>;i&lt; n;i++ &#123;</span><br><span class="line">    b[i] = i</span><br><span class="line">&#125;</span><br><span class="line">fmt.Println(b)</span><br><span class="line"><span class="comment">// [0 1 2 3 4 5 6 7 8 9]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 取slice的最后的一个元素 做offset位移</span></span><br><span class="line">end := unsafe.Pointer(<span class="keyword">uintptr</span>(unsafe.Pointer(&amp;b[<span class="number">0</span>])) + <span class="number">9</span> * unsafe.Sizeof(b[<span class="number">0</span>]))</span><br><span class="line"><span class="comment">// 等价于unsafe.Pointer(&amp;b[9])</span></span><br><span class="line">fmt.Println(*(*<span class="keyword">int</span>)(end))</span><br><span class="line"><span class="comment">// 9</span></span><br></pre></td></tr></table></figure>
+
+<p>注意：虽然uintpr保存了一个指针地址，但它只是一个值，不引用任何对象。</p>
+<ul>
+<li>如果uintptr地址相关联对象移动，则其值也不会更新。例如goroutine的堆栈信息发生变化</li>
+<li>uintptr地址关联的对象可以被垃圾回收。GC不认为uintptr是活引用，<strong>因此unitptr地址指向的对象可以被垃圾收集。</strong></li>
+</ul>
+<p>一个uintptr可以被转换成unsafe.Pointer,同时unsafe.Pointer也可以被转换为uintptr。可以使用使用uintptr + offset计算出地址，然后使用unsafe.Pointer进行转换，格式如下：<code>p = unsafe.Pointer(uintptr(p) + offset)</code></p>
+<p><strong>总结</strong>：<em><strong>uintptr</strong></em>指针用来做数学运算</p>
+<h3 id="unsafe-Pointer"><a href="#unsafe-Pointer" class="headerlink" title="unsafe.Pointer"></a>unsafe.Pointer</h3><p>unsafe.Pointer是特别定义的一种指针类型,它可以包含任意类型变量的地址。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ArbitraryType is here for the purposes of documentation only and is not actually</span></span><br><span class="line"><span class="comment">// part of the unsafe package. It represents the type of an arbitrary Go expression.</span></span><br><span class="line"><span class="comment">// ArbitraryType在这里不是unsafe包的实际的一部分，仅仅是为了文档记录</span></span><br><span class="line"><span class="keyword">type</span> ArbitraryType <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Pointer *ArbitraryType</span><br><span class="line"></span><br><span class="line"><span class="comment">// 官方文档</span></span><br><span class="line">Pointer represents a pointer to an arbitrary <span class="keyword">type</span>. There are four special operations</span><br><span class="line">available <span class="keyword">for</span> <span class="keyword">type</span> Pointer that are not available <span class="keyword">for</span> other types:    <span class="comment">//  Pointer代表了一个任意类型的指针。Pointer类型有四种特殊的操作是其他类型不能使用的:</span></span><br><span class="line">   - A pointer value of any <span class="keyword">type</span> can be converted to a Pointer.       <span class="comment">//  任意类型的指针可以被转换为Pointer</span></span><br><span class="line">   - A Pointer can be converted to a pointer value of any <span class="keyword">type</span>.       <span class="comment">//  Pointer可以被转换为任务类型的值的指针</span></span><br><span class="line">   - A <span class="keyword">uintptr</span> can be converted to a Pointer.                         <span class="comment">//  uintptr可以被转换为Pointer</span></span><br><span class="line">   - A Pointer can be converted to a <span class="keyword">uintptr</span>.                         <span class="comment">//  Pointer可以被转换为uintptr</span></span><br><span class="line">Pointer therefore allows a program to defeat the <span class="keyword">type</span> system and read and write</span><br><span class="line">arbitrary memory. It should be used with extreme care.                <span class="comment">//  因此Pointer允许程序不按类型系统的要求来读写任意的内存，应该非常小心地使用它。</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>总结</strong>：所以<code>unsafe.Pointer</code>做的主要是用来进行桥接，用于不同类型的指针进行互相转换。</p>
+<h3 id="unsafe-Pointer-uintptr与普通指针的互相转换"><a href="#unsafe-Pointer-uintptr与普通指针的互相转换" class="headerlink" title="unsafe.Pointer,uintptr与普通指针的互相转换"></a>unsafe.Pointer,uintptr与普通指针的互相转换</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> f <span class="keyword">float64</span> = <span class="number">1.0</span></span><br><span class="line">fmt.Println(Float64bits(f))</span><br><span class="line"><span class="comment">// 4607182418800017408</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Float64bits</span><span class="params">(f <span class="keyword">float64</span>)</span> <span class="title">uint64</span></span> &#123;</span><br><span class="line">	<span class="comment">// (*uint64*) 转换成uint64指针 在*号取值</span></span><br><span class="line">    <span class="keyword">return</span> *((*<span class="keyword">uint64</span>)(unsafe.Pointer(&amp;f)))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="go中常用的常量"><a href="#go中常用的常量" class="headerlink" title="go中常用的常量"></a>go中常用的常量</h2><ul>
+<li><strong>^uintptr(0)</strong>:<ul>
+<li>math.MaxUint64</li>
+<li>2 的 64 次方减 1</li>
+</ul>
+</li>
+<li><strong>maxAlloc</strong>:<ul>
+<li><strong>允许用户分配的最大虚拟内存空间</strong>。在 64 位，理论上可分配最大 <code>1 &lt;&lt; heapAddrBits</code> 字节。在 32 位，最大可分配小于 <code>1 &lt;&lt; 32</code> 字节</li>
+</ul>
+</li>
+</ul>
+<h2 id="slice源码阅读"><a href="#slice源码阅读" class="headerlink" title="slice源码阅读"></a><strong>slice</strong>源码阅读</h2><ul>
+<li>slice数据结构</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> slice <span class="keyword">struct</span> &#123;  </span><br><span class="line"> <span class="comment">// Pointer 是指向一个数组的指针</span></span><br><span class="line"> array unsafe.Pointer  </span><br><span class="line"> <span class="comment">// len 代表当前切片的长度</span></span><br><span class="line"> <span class="built_in">len</span>   <span class="keyword">int</span>  </span><br><span class="line"> <span class="comment">// cap 是当前切片的容量</span></span><br><span class="line"> <span class="built_in">cap</span>   <span class="keyword">int</span>  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建切片"><a href="#创建切片" class="headerlink" title="创建切片"></a>创建切片</h3><p>make 函数允许在运行期动态指定数组长度，绕开了数组类型必须使用编译期常量的限制。</p>
+<p>创建切片有两种形式，make 创建切片，空切片。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 该函数传入需要初始化的切片的类型，长度以及容量，返回的指针会通过调用方组建成一个完成的slice结构体</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">makeslice</span><span class="params">(et *_type, <span class="built_in">len</span>, <span class="built_in">cap</span> <span class="keyword">int</span>)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</span><br><span class="line"><span class="comment">// 判断类型，和容量的乘积会不会超过可分配内存的大小，以及长度是否为0和容量是否小于长度</span></span><br><span class="line"> mem, overflow := math.MulUintptr(et.size, <span class="keyword">uintptr</span>(<span class="built_in">cap</span>))  </span><br><span class="line"> <span class="keyword">if</span> overflow || mem &gt; maxAlloc || <span class="built_in">len</span> &lt; <span class="number">0</span> || <span class="built_in">len</span> &gt; <span class="built_in">cap</span> &#123;  </span><br><span class="line">  <span class="comment">// <span class="doctag">NOTE:</span> Produce a &#x27;len out of range&#x27; error instead of a  </span></span><br><span class="line">  <span class="comment">// &#x27;cap out of range&#x27; error when someone does make([]T, bignumber).  // &#x27;cap out of range&#x27; is true too, but since the cap is only being  // supplied implicitly, saying len is clearer.  // See golang.org/issue/4085.  mem, overflow := math.MulUintptr(et.size, uintptr(len))  </span></span><br><span class="line">  <span class="keyword">if</span> overflow || mem &gt; maxAlloc || <span class="built_in">len</span> &lt; <span class="number">0</span> &#123;  </span><br><span class="line">   panicmakeslicelen()  </span><br><span class="line">  &#125;  </span><br><span class="line">  panicmakeslicecap()  </span><br><span class="line"> &#125;  </span><br><span class="line">  <span class="comment">// 如果都正常，则调用此函数申请返回一个连续 切片中元素大小×切片容量 长度的内存空间的指针</span></span><br><span class="line"> <span class="keyword">return</span> mallocgc(mem, et, <span class="literal">true</span>)  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="nil和空切片"><a href="#nil和空切片" class="headerlink" title="nil和空切片"></a>nil和空切片</h3><p>空切片和 nil 切片的区别在于，空切片指向的地址不是nil，指向的是一个内存地址，但是它没有分配任何内存空间，即底层元素包含0个元素。</p>
+<h3 id="切片的扩容"><a href="#切片的扩容" class="headerlink" title="切片的扩容"></a>切片的扩容</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">growslice</span><span class="params">(et *_type, old slice, <span class="built_in">cap</span> <span class="keyword">int</span>)</span> <span class="title">slice</span></span> &#123;</span><br><span class="line">	<span class="comment">// 如果需求的容量小于就容量则报错</span></span><br><span class="line">  <span class="comment">// 理论上来讲不应该出现这个问题</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">cap</span> &lt; old.<span class="built_in">cap</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(errorString(<span class="string">&quot;growslice: cap out of range&quot;</span>))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// append 没法创建一个nil指针的但是len不为0的切片</span></span><br><span class="line">	<span class="keyword">if</span> et.size == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> slice&#123;unsafe.Pointer(&amp;zerobase), old.<span class="built_in">len</span>, <span class="built_in">cap</span>&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	newcap := old.<span class="built_in">cap</span></span><br><span class="line">	doublecap := newcap + newcap</span><br><span class="line">  <span class="comment">// 如果需求容量大于双倍的旧容量那就直接使用需求容量</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">cap</span> &gt; doublecap &#123;</span><br><span class="line">		newcap = <span class="built_in">cap</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 如果当前len小于1024则容量直接翻倍，否则按照1.25倍去递增直到满足需求容量</span></span><br><span class="line">		<span class="keyword">if</span> old.<span class="built_in">len</span> &lt; <span class="number">1024</span> &#123;</span><br><span class="line">			newcap = doublecap</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> <span class="number">0</span> &lt; newcap &amp;&amp; newcap &lt; <span class="built_in">cap</span> &#123;</span><br><span class="line">				newcap += newcap / <span class="number">4</span></span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> newcap &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				newcap = <span class="built_in">cap</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> overflow <span class="keyword">bool</span></span><br><span class="line">	<span class="keyword">var</span> lenmem, newlenmem, capmem <span class="keyword">uintptr</span></span><br><span class="line"><span class="comment">// 在扩容时不能单单按照len来判断扩容所需要的内存长度</span></span><br><span class="line"><span class="comment">// 还要根据切片的元素类型去进行内存对齐</span></span><br><span class="line"><span class="comment">// 当元素的占用字节数为1，8 或者2的倍数时会进行内存对对齐</span></span><br><span class="line"><span class="comment">// 内存对齐策略按照向上取整方式进行</span></span><br><span class="line"><span class="comment">// 取整的目标时go内存分配策略中67个class分页中的大小进行取整</span></span><br><span class="line">	<span class="keyword">switch</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> et.size == <span class="number">1</span>:</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>)</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>)</span><br><span class="line">		capmem = roundupsize(<span class="keyword">uintptr</span>(newcap))</span><br><span class="line">		overflow = <span class="keyword">uintptr</span>(newcap) &gt; maxAlloc</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem)</span><br><span class="line">	<span class="keyword">case</span> et.size == sys.PtrSize:</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>) * sys.PtrSize</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>) * sys.PtrSize</span><br><span class="line">		capmem = roundupsize(<span class="keyword">uintptr</span>(newcap) * sys.PtrSize)</span><br><span class="line">		overflow = <span class="keyword">uintptr</span>(newcap) &gt; maxAlloc/sys.PtrSize</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem / sys.PtrSize)</span><br><span class="line">	<span class="keyword">case</span> isPowerOfTwo(et.size):</span><br><span class="line">		<span class="keyword">var</span> shift <span class="keyword">uintptr</span></span><br><span class="line">		<span class="keyword">if</span> sys.PtrSize == <span class="number">8</span> &#123;</span><br><span class="line">			<span class="comment">// Mask shift for better code generation.</span></span><br><span class="line">			shift = <span class="keyword">uintptr</span>(sys.Ctz64(<span class="keyword">uint64</span>(et.size))) &amp; <span class="number">63</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			shift = <span class="keyword">uintptr</span>(sys.Ctz32(<span class="keyword">uint32</span>(et.size))) &amp; <span class="number">31</span></span><br><span class="line">		&#125;</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>) &lt;&lt; shift</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>) &lt;&lt; shift</span><br><span class="line">		capmem = roundupsize(<span class="keyword">uintptr</span>(newcap) &lt;&lt; shift)</span><br><span class="line">		overflow = <span class="keyword">uintptr</span>(newcap) &gt; (maxAlloc &gt;&gt; shift)</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem &gt;&gt; shift)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>) * et.size</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>) * et.size</span><br><span class="line">		capmem, overflow = math.MulUintptr(et.size, <span class="keyword">uintptr</span>(newcap))</span><br><span class="line">		capmem = roundupsize(capmem)</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem / et.size)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 如果所需要的内存超过了最大可分配内存则panic</span></span><br><span class="line">	<span class="keyword">if</span> overflow || capmem &gt; maxAlloc &#123;</span><br><span class="line">		<span class="built_in">panic</span>(errorString(<span class="string">&quot;growslice: cap out of range&quot;</span>))</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> p unsafe.Pointer</span><br><span class="line">  <span class="comment">// 如果当前元素类型不是指针，则会将超出切片当前长度的位置清空</span></span><br><span class="line">  <span class="comment">// 并在最后使用 将原数组内存中的内容拷贝到新申请的内存中。</span></span><br><span class="line">	<span class="keyword">if</span> et.ptrdata == <span class="number">0</span> &#123;</span><br><span class="line">		p = mallocgc(capmem, <span class="literal">nil</span>, <span class="literal">false</span>)</span><br><span class="line">		memclrNoHeapPointers(add(p, newlenmem), capmem-newlenmem)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 如果是指针会根据进行gc方面对其进行加以保护以免空指针在分配期间被gc回收</span></span><br><span class="line">		p = mallocgc(capmem, et, <span class="literal">true</span>)</span><br><span class="line">		<span class="keyword">if</span> lenmem &gt; <span class="number">0</span> &amp;&amp; writeBarrier.enabled &#123;</span><br><span class="line">			bulkBarrierPreWriteSrcOnly(<span class="keyword">uintptr</span>(p), <span class="keyword">uintptr</span>(old.array), lenmem-et.size+et.ptrdata)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	memmove(p, old.array, lenmem)</span><br><span class="line">	<span class="comment">//该函数最终会返回一个新的切片</span></span><br><span class="line">	<span class="keyword">return</span> slice&#123;p, old.<span class="built_in">len</span>, newcap&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Go 中切片扩容的策略是这样的：</p>
+<ul>
+<li>  首先判断，如果新申请容量（cap）大于2倍的旧容量（old.cap），最终容量（newcap）就是新申请的容量（cap）</li>
+<li>  否则判断，如果旧切片的长度小于1024，则最终容量(newcap)就是旧容量(old.cap)的两倍，即（newcap=doublecap）</li>
+<li>  否则判断，如果旧切片长度大于等于1024，则最终容量（newcap）从旧容量（old.cap）开始循环增加原来的 1/4，即（newcap=old.cap,for {newcap += newcap/4}）直到最终容量（newcap）大于等于新申请的容量(cap)，即（newcap &gt;= cap）</li>
+<li>  如果最终容量（cap）计算值溢出，则最终容量（cap）就是新申请容量（cap）</li>
+</ul>
+<p><del>如果切片的容量小于 1024 个元素，于是扩容的时候就翻倍增加容量。上面那个例子也验证了这一情况，总容量从原来的4个翻倍到现在的8个。</del></p>
+<p><del>一旦元素个数超过 1024 个元素，那么增长因子就变成 1.25 ，即每次增加原来容量的四分之一。</del></p>
+<p><strong>注意：扩容扩大的容量都是针对原来的容量而言的，而不是针对原来数组的长度而言的。</strong></p>
+<p>这种情况，由于原数组还有容量可以扩容，所以执行 append() 操作以后，会在原数组上直接操作，所以这种情况下，扩容以后的数组还是指向原来的数组。</p>
+<h3 id="切片的拷贝"><a href="#切片的拷贝" class="headerlink" title="切片的拷贝"></a>切片的拷贝</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">slicecopy</span><span class="params">(toPtr unsafe.Pointer, toLen <span class="keyword">int</span>, fmPtr unsafe.Pointer, fmLen <span class="keyword">int</span>, width <span class="keyword">uintptr</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> fmLen == <span class="number">0</span> || toLen == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	n := fmLen</span><br><span class="line">	<span class="keyword">if</span> toLen &lt; n &#123;</span><br><span class="line">		n = toLen</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> width == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> n</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	size := <span class="keyword">uintptr</span>(n) * width</span><br><span class="line">	<span class="keyword">if</span> size == <span class="number">1</span> &#123;  </span><br><span class="line">    <span class="comment">// 如果就1个元素 直接赋值过去就好了</span></span><br><span class="line">		*(*<span class="keyword">byte</span>)(toPtr) = *(*<span class="keyword">byte</span>)(fmPtr)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 直接进行内存的拷贝，如果slice数据量过大将会影响性能</span></span><br><span class="line">		memmove(toPtr, fmPtr, size)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> n</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="切片的深拷贝和浅拷贝"><a href="#切片的深拷贝和浅拷贝" class="headerlink" title="切片的深拷贝和浅拷贝"></a>切片的深拷贝和浅拷贝</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 浅拷贝</span></span><br><span class="line">slice1 := []<span class="keyword">int</span>&#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125; </span><br><span class="line">slice2 := slice1 </span><br><span class="line">fmt.Println(slice1) </span><br><span class="line">fmt.Println(slice2)</span><br><span class="line"><span class="comment">//同时改变两个数组 </span></span><br><span class="line">slice1[<span class="number">1</span>]=<span class="number">100</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 深拷贝</span></span><br><span class="line">slice1 := []<span class="keyword">int</span>&#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125;</span><br><span class="line">slice2 := <span class="built_in">make</span>([]<span class="keyword">int</span>,<span class="number">5</span>,<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">copy</span>(slice2,slice1)</span><br><span class="line">fmt.Println(slice1)</span><br><span class="line">fmt.Println(slice2)</span><br><span class="line">slice1[<span class="number">1</span>]=<span class="number">100</span>  <span class="comment">//只会影响slice1</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>copy函数</strong><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// The copy built-in function copies elements from a source slice into a  </span></span><br><span class="line"><span class="comment">// destination slice. (As a special case, it also will copy bytes from a  </span></span><br><span class="line"><span class="comment">// string to a slice of bytes.) The source and destination may overlap. Copy  </span></span><br><span class="line"><span class="comment">// returns the number of elements copied, which will be the minimum of  </span></span><br><span class="line"><span class="comment">// len(src) and len(dst).  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">copy</span><span class="params">(dst, src []Type)</span> <span class="title">int</span></span></span><br><span class="line"><span class="comment">// ## 切片 dst 需要先初始化长度</span></span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="comment">// ## 源切片中元素类型为引用类型时，拷贝的是引用</span></span><br></pre></td></tr></table></figure></li>
+<li>  如果 dst 长度小于 src 的长度，则 copy 部分；</li>
+<li>  如果大于，则全部拷贝过来，只是没占满 dst 的坑位而已；</li>
+<li>  相等时刚好不多不少 copy 过来。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>语言学习</category>
+        <category>golang</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+        <tag>源码阅读</tag>
       </tags>
   </entry>
   <entry>
@@ -768,82 +991,32 @@
       </tags>
   </entry>
   <entry>
-    <title>golang的错误类型</title>
-    <url>/2022/02/14/golang%E7%9A%84%E9%94%99%E8%AF%AF%E7%B1%BB%E5%9E%8B/</url>
+    <title>linux条件变量pthread_cond_wait</title>
+    <url>/2022/01/21/linux%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8Fpthread-cond-wait/</url>
     <content><![CDATA[<hr>
-<p>作为golang语言的初心者，很多go的常用接口熟悉结构体都需要仔细看看源码，避免踩坑。目前重构代码用到了自己写的错误类和wrap相关函数对基层错误进行包装和unwrap函数对错误类进行递归拆解，但是写起来就是很不美观，强迫症。学习下优雅的处理错误吧。</p>
+<p>linux条件变量的使用，以及为什么pthread_cond_wait要传入一个互斥量，并且要解锁互斥量，再wait。通过一个常用的pthread_cond_wait使用方法来讲解。c++11的条件变量也是同理使用。</p>
 <span id="more"></span>
 <!-- toc -->
 
-<p>[toc]</p>
-<h2 id="golang的错误类型error"><a href="#golang的错误类型error" class="headerlink" title="golang的错误类型error"></a>golang的错误类型<strong>error</strong></h2><p><strong>Golang</strong> 中的错误也是一种类型。错误用内置的 <code>error</code> 类型表示。就像其他类型，如 <code>int</code>，<code>float64</code> 等。</p>
-<p>错误值可以存储在变量中，也可以从函数中返回，等等。</p>
-<h2 id="error类型源码"><a href="#error类型源码" class="headerlink" title="error类型源码"></a>error类型源码</h2><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/builtin/builtin.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// The error built-in interface type is the conventional interface for</span></span><br><span class="line"><span class="comment">// representing an error condition, with the nil value representing no error.</span></span><br><span class="line"><span class="keyword">type</span> error <span class="keyword">interface</span> &#123;</span><br><span class="line">    Error() <span class="keyword">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>error</code> 是一个接口类型，它包含一个 <code>Error()</code> 方法，返回值为 <code>string</code>。任何实现这个接口的类型都可以作为一个错误使用，Error 这个方法提供了对错误的描述。<br>ps: <code>nil</code>代表没有错误</p>
-<ul>
-<li>实例<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">f, err := os.Open(<span class="string">&quot;/test.txt&quot;</span>)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    fmt.Println(<span class="string">&quot;open failed, err:&quot;</span>, err)</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line">fmt.Println(<span class="string">&quot;file is ：&quot;</span>, f)</span><br></pre></td></tr></table></figure>
-当执行打印错误语句时，fmt 包会自动调用 <code>err.Error()</code> 函数来打印字符串。</li>
-</ul>
-<h2 id="error的创建"><a href="#error的创建" class="headerlink" title="error的创建"></a>error的创建</h2><p>创建方式有两种</p>
-<ul>
-<li>  errors.New()</li>
-<li>  fmt.Errorf()</li>
-</ul>
-<h3 id="errors-New-函数-errorString类型"><a href="#errors-New-函数-errorString类型" class="headerlink" title="errors.New()函数 - errorString类型"></a>errors.New()函数 - errorString类型</h3><ul>
-<li>src/errors/errors.go</li>
-<li>源码<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/errors/errors.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// New returns an error that formats as the given text.</span></span><br><span class="line"><span class="comment">// Each call to New returns a distinct error value even if the text is identical.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(text <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;errorString&#123;text&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// errorString is a trivial implementation of error.</span></span><br><span class="line"><span class="keyword">type</span> errorString <span class="keyword">struct</span> &#123;</span><br><span class="line">    s <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *errorString)</span> <span class="title">Error</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-New () 函数返回一个错误，该错误的格式为给定的文本。<br>即使文本相同，每次对 New 的调用也会返回一个不同的错误值。</li>
-</ul>
-<p>其中 errorString 是一个结构体，只有一个 string 类型的字段 s，并且实现了唯一的方法：Error()</p>
-<ul>
-<li>例子<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 1.errors.New() 创建一个 error</span></span><br><span class="line">err1 := errors.New(<span class="string">&quot;这是 errors.New() 创建的错误&quot;</span>)</span><br><span class="line">fmt.Printf(<span class="string">&quot;err1 错误类型：%T，错误为：%v\n&quot;</span>, err1, err1)</span><br><span class="line">err1 错误类型：*errors.errorString，错误为：这是 errors.New() 创建的错误</span><br></pre></td></tr></table></figure>
-可以看到，错误类型是 <code>errorString</code> 指针，前面的 <code>errors.</code> 表明了其在 errors 包下。</li>
-</ul>
-<h3 id="fmt-Errorf-函数-errorString类型和wrapError类型"><a href="#fmt-Errorf-函数-errorString类型和wrapError类型" class="headerlink" title="fmt.Errorf()函数 - errorString类型和wrapError类型"></a>fmt.Errorf()函数 - errorString类型和wrapError类型</h3><ul>
-<li><p>源码</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/fmt/errors.go</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Errorf</span><span class="params">(format <span class="keyword">string</span>, a ...<span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    p := newPrinter()</span><br><span class="line">    p.wrapErrs = <span class="literal">true</span></span><br><span class="line">    p.doPrintf(format, a)</span><br><span class="line">    s := <span class="keyword">string</span>(p.buf)</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="keyword">if</span> p.wrappedErr == <span class="literal">nil</span> &#123;</span><br><span class="line">        err = errors.New(s)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        err = &amp;wrapError&#123;s, p.wrappedErr&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    p.free()</span><br><span class="line">    <span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>通过源码可以看到，<code>p.wrappedErr</code> 为 <code>nil</code> 的时候，会调用 <code>errors.New()</code> 来创建错误。<br>所以fmt.Errorf()函数创建的错误类型也为<code>errors.errorString</code></p>
+<h2 id="linux条件变量pthread-cond-wait理解"><a href="#linux条件变量pthread-cond-wait理解" class="headerlink" title="linux条件变量pthread_cond_wait理解"></a>linux条件变量pthread_cond_wait理解</h2><ul>
+<li><p>正确的使用</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 线程A，条件测试</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);        <span class="comment">// a1</span></span><br><span class="line"><span class="keyword">while</span>(pass == <span class="number">0</span>) &#123;              <span class="comment">// a2 </span></span><br><span class="line">    <span class="built_in">pthread_cond_wait</span>(cv, mtx); <span class="comment">// a3</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx);      <span class="comment">// a4</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 线程B，条件发生修改，对应的signal代码</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);   <span class="comment">// b1</span></span><br><span class="line">pass = <span class="number">1</span>;                  <span class="comment">// b2</span></span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx); <span class="comment">// b3</span></span><br><span class="line"><span class="built_in">pthread_cond_signal</span>(cv);   <span class="comment">// b4</span></span><br></pre></td></tr></table></figure></li>
+<li><p>步骤拆解</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 线程A，条件测试</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);        <span class="comment">// a1</span></span><br><span class="line"><span class="keyword">while</span>(pass == <span class="number">0</span>) &#123;              <span class="comment">// a2 </span></span><br><span class="line">    <span class="built_in">pthread_mutex_unlock</span>(mtx);  <span class="comment">// a3</span></span><br><span class="line">    <span class="built_in">pthread_cond_just_wait</span>(cv); <span class="comment">// a4</span></span><br><span class="line">    <span class="built_in">pthread_mutex_lock</span>(mtx);    <span class="comment">// a5</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 线程B，条件发生修改，对应的signal代码</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);   <span class="comment">// b1</span></span><br><span class="line">pass = <span class="number">1</span>;                  <span class="comment">// b2</span></span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx); <span class="comment">// b3</span></span><br><span class="line"><span class="built_in">pthread_cond_signal</span>(cv);   <span class="comment">// b4</span></span><br></pre></td></tr></table></figure>
+<p>存在问题，若步骤是a1，a2，a3，b1，b2，b3，b4，a5<br>这样的话，线程a是不会被唤醒的。因此pthread_cond_wait是必须是一个原子性操作。</p>
 </li>
-<li><p>例子</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 2.fmt.Errorf()</span></span><br><span class="line">err2 := fmt.Errorf(<span class="string">&quot;这个 fmt.Errorf() 创建的错误,错误编码为：%d&quot;</span>, <span class="number">404</span>)</span><br><span class="line">fmt.Printf(<span class="string">&quot;err2 错误类型：%T，错误为：%v\n&quot;</span>, err2, err2)</span><br><span class="line"><span class="comment">// 输出</span></span><br><span class="line">err2 错误类型：*errors.errorString，错误为：这个 fmt.Errorf() 创建的错误,错误编码为：<span class="number">404</span></span><br></pre></td></tr></table></figure></li>
-</ul>
-<h4 id="fmt-wrapError"><a href="#fmt-wrapError" class="headerlink" title="fmt.wrapError"></a>fmt.wrapError</h4><ul>
-<li>例子<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 3. go 1.13 新增加的错误处理特性  %w</span></span><br><span class="line">err3 := fmt.Errorf(<span class="string">&quot;err3: %w&quot;</span>, err2)  <span class="comment">// err3包裹err2错误</span></span><br><span class="line">fmt.Printf(<span class="string">&quot;err3 错误类型：%T，错误为：%v\n&quot;</span>, err3, err3)</span><br><span class="line"><span class="comment">// 输出</span></span><br><span class="line">err3 错误类型：*fmt.wrapError，错误为：err3: 这个 fmt.Errorf() 创建的错误,错误编码为：<span class="number">404</span></span><br></pre></td></tr></table></figure></li>
-</ul>
-<h4 id="newPrinter结构体"><a href="#newPrinter结构体" class="headerlink" title="newPrinter结构体"></a>newPrinter结构体</h4><ul>
-<li>源码<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/fmt/print.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// newPrinter allocates a new pp struct or grabs a cached one.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newPrinter</span><span class="params">()</span> *<span class="title">pp</span></span> &#123;</span><br><span class="line">    p := ppFree.Get().(*pp)</span><br><span class="line">    p.panicking = <span class="literal">false</span></span><br><span class="line">    p.erroring = <span class="literal">false</span></span><br><span class="line">    p.wrapErrs = <span class="literal">false</span></span><br><span class="line">    p.fmt.init(&amp;p.buf)</span><br><span class="line">    <span class="keyword">return</span> p</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// src/fmt/print.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// pp is used to store a printer&#x27;s state and is reused with sync.Pool to avoid allocations.</span></span><br><span class="line"><span class="keyword">type</span> pp <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// wrapErrs is set when the format string may contain a %w verb.</span></span><br><span class="line">    wrapErrs <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// wrappedErr records the target of the %w verb.</span></span><br><span class="line">    wrappedErr error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<code>newPrinter()</code>生成一个pp结构体，pp结构体有wrapErrs和wrappedErr两个成员。</li>
-<li><code>wrapErrs</code><ul>
-<li>bool 类型，当格式字符串包含<code>％w</code> 动词时，将赋值为 true</li>
-</ul>
-</li>
-<li><code>wrappedErr</code><ul>
-<li>error 类型，记录<code>％w</code> 动词的目标，即例子的 <code>err2</code></li>
-</ul>
+<li><p>条件变量传入的互斥锁<br>这个互斥锁，不是用来保护条件变量的内部状态。而是用来保护外部”条件”(就是那个 while 循环中的判断）。假如条件变量的内部状态需要锁定，完全可以在内部实现中维护一个锁，没有必要从外部传进来。<br>用于判断是否等待的“条件“，通常就是线程之间共享的某个变量值。A 线程判断”条件“等待，会读取共享变量。B 线程让”条件“满足，会修改变量。<code>这个锁，就是保护线程间的共享变量（”条件“）</code>，让”条件“不会一边修改，一边读取。这把锁还有个额外的作用。wait 函数会阻塞，将线程 A 放到阻塞队列中。wait 函数放在锁的 lock，unlock 内部，也保证了线程还没有真正放到阻塞队列时，线程 B 不能修改“条件”后进行唤醒。这段话应该暂时读不懂，可回头再看，先放在这里，不然描述就不够准确。</p>
 </li>
 </ul>
-<p>在函数fmt.Errorf()中<code>p.wrappedErr</code>不为空则会调用生成一个<code>wrapErrors</code>结构体</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">err = &amp;wrapError&#123;s, p.wrappedErr&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="fmt-wrapError分析"><a href="#fmt-wrapError分析" class="headerlink" title="fmt.wrapError分析"></a>fmt.wrapError分析</h3><ul>
-<li>源码<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// src/fmt/errors.go</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> wrapError <span class="keyword">struct</span> &#123;</span><br><span class="line">    msg <span class="keyword">string</span></span><br><span class="line">    err error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *wrapError)</span> <span class="title">Error</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.msg</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *wrapError)</span> <span class="title">Unwrap</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li>msg, <code>string</code>类型</li>
-<li>err <code>error</code>类型</li>
-</ul>
-<p>实现了两个方法：</p>
-<p>Error ()，也说明 wrapError 结构体实现了 error 接口，是一个 error 类型<br>Unwrap ()，作用是返回原错误值，没有自定义的 msg 了。也就是说拆开了一个被包装的 error。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>总结一下吧，Golang 中创建错误有两种方式：<br>第一种：errors.New() 函数，其返回值类型为 *errors.errorString。</p>
-<p>第二种：fmt.Errorf() 函数<br>当使用 fmt.Errorf() 来创建错误时，核心有以下两点：</p>
-<p>错误描述中不包含 %w 时，p.wrappedErr 为 nil，所以底层也是调用 errors.New() 创建错误。因此错误类型就是 *errors.errorString。</p>
-<p>错误描述中包含%w 时，p.wrappedErr 不为 nil，所以底层实例化 wrapError 结构体指针。 因此错误类型是 *fmt.wrapError，可以理解为包裹错误类型。</p>
 ]]></content>
       <categories>
-        <category>语言学习</category>
-        <category>golang</category>
+        <category>linux</category>
+        <category>并发编程</category>
       </categories>
       <tags>
-        <tag>golang</tag>
-        <tag>源码阅读</tag>
+        <tag>c++</tag>
+        <tag>linux</tag>
+        <tag>多线程</tag>
       </tags>
   </entry>
   <entry>
@@ -1077,35 +1250,6 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
       <tags>
         <tag>Reactor</tag>
         <tag>libevent</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>linux条件变量pthread_cond_wait</title>
-    <url>/2022/01/21/linux%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8Fpthread-cond-wait/</url>
-    <content><![CDATA[<hr>
-<p>linux条件变量的使用，以及为什么pthread_cond_wait要传入一个互斥量，并且要解锁互斥量，再wait。通过一个常用的pthread_cond_wait使用方法来讲解。c++11的条件变量也是同理使用。</p>
-<span id="more"></span>
-<!-- toc -->
-
-<h2 id="linux条件变量pthread-cond-wait理解"><a href="#linux条件变量pthread-cond-wait理解" class="headerlink" title="linux条件变量pthread_cond_wait理解"></a>linux条件变量pthread_cond_wait理解</h2><ul>
-<li><p>正确的使用</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 线程A，条件测试</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);        <span class="comment">// a1</span></span><br><span class="line"><span class="keyword">while</span>(pass == <span class="number">0</span>) &#123;              <span class="comment">// a2 </span></span><br><span class="line">    <span class="built_in">pthread_cond_wait</span>(cv, mtx); <span class="comment">// a3</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx);      <span class="comment">// a4</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 线程B，条件发生修改，对应的signal代码</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);   <span class="comment">// b1</span></span><br><span class="line">pass = <span class="number">1</span>;                  <span class="comment">// b2</span></span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx); <span class="comment">// b3</span></span><br><span class="line"><span class="built_in">pthread_cond_signal</span>(cv);   <span class="comment">// b4</span></span><br></pre></td></tr></table></figure></li>
-<li><p>步骤拆解</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 线程A，条件测试</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);        <span class="comment">// a1</span></span><br><span class="line"><span class="keyword">while</span>(pass == <span class="number">0</span>) &#123;              <span class="comment">// a2 </span></span><br><span class="line">    <span class="built_in">pthread_mutex_unlock</span>(mtx);  <span class="comment">// a3</span></span><br><span class="line">    <span class="built_in">pthread_cond_just_wait</span>(cv); <span class="comment">// a4</span></span><br><span class="line">    <span class="built_in">pthread_mutex_lock</span>(mtx);    <span class="comment">// a5</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 线程B，条件发生修改，对应的signal代码</span></span><br><span class="line"><span class="built_in">pthread_mutex_lock</span>(mtx);   <span class="comment">// b1</span></span><br><span class="line">pass = <span class="number">1</span>;                  <span class="comment">// b2</span></span><br><span class="line"><span class="built_in">pthread_mutex_unlock</span>(mtx); <span class="comment">// b3</span></span><br><span class="line"><span class="built_in">pthread_cond_signal</span>(cv);   <span class="comment">// b4</span></span><br></pre></td></tr></table></figure>
-<p>存在问题，若步骤是a1，a2，a3，b1，b2，b3，b4，a5<br>这样的话，线程a是不会被唤醒的。因此pthread_cond_wait是必须是一个原子性操作。</p>
-</li>
-<li><p>条件变量传入的互斥锁<br>这个互斥锁，不是用来保护条件变量的内部状态。而是用来保护外部”条件”(就是那个 while 循环中的判断）。假如条件变量的内部状态需要锁定，完全可以在内部实现中维护一个锁，没有必要从外部传进来。<br>用于判断是否等待的“条件“，通常就是线程之间共享的某个变量值。A 线程判断”条件“等待，会读取共享变量。B 线程让”条件“满足，会修改变量。<code>这个锁，就是保护线程间的共享变量（”条件“）</code>，让”条件“不会一边修改，一边读取。这把锁还有个额外的作用。wait 函数会阻塞，将线程 A 放到阻塞队列中。wait 函数放在锁的 lock，unlock 内部，也保证了线程还没有真正放到阻塞队列时，线程 B 不能修改“条件”后进行唤醒。这段话应该暂时读不懂，可回头再看，先放在这里，不然描述就不够准确。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>linux</category>
-        <category>并发编程</category>
-      </categories>
-      <tags>
-        <tag>c++</tag>
-        <tag>linux</tag>
-        <tag>多线程</tag>
       </tags>
   </entry>
   <entry>
@@ -1568,6 +1712,205 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
       </tags>
   </entry>
   <entry>
+    <title>vegeta测试</title>
+    <url>/2022/04/14/vegete%E6%B5%8B%E8%AF%95/</url>
+    <content><![CDATA[<p>Vegeta 是一个用 Go 语言编写的多功能的 HTTP 负载测试工具，它提供了命令行工具和一个开发库。 </p>
+<span id="more"></span>
+
+<!-- toc -->
+
+<h2 id="什么是-Vegeta"><a href="#什么是-Vegeta" class="headerlink" title="什么是 Vegeta"></a><strong>什么是 Vegeta</strong></h2><p><a href="https://github.com/tsenart/vegeta">官方地址</a></p>
+<h2 id="Vegeta-用法"><a href="#Vegeta-用法" class="headerlink" title="Vegeta 用法"></a>Vegeta 用法</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">vegeta --help  </span><br><span class="line">Usage: vegeta [global flags] &lt;command&gt; [command flags]  </span><br><span class="line">   </span><br><span class="line">global flags:  </span><br><span class="line"> -cpus int  </span><br><span class="line"> 使用 CPU 的数量 (默认为 4 个)  </span><br><span class="line"> -profile string  </span><br><span class="line"> 指定在执行期间启用哪个分析器，支持 cpu 和 heap。   </span><br><span class="line"> -version  </span><br><span class="line"> 打印版本并退出。  </span><br><span class="line">   </span><br><span class="line">attack command:  </span><br><span class="line"> -body string  </span><br><span class="line"> 指定请求主体文件里的内容。  </span><br><span class="line"> -cert string  </span><br><span class="line"> 指定用于 HTTPS 请求的 PEM 格式的客户端证书文件。如果 -key 未指定，它会被设置为这个标志的值。  </span><br><span class="line"> -connections int  </span><br><span class="line"> 指定每个目标主机打开的空闲连接的最大数目，默认值为 10000。  </span><br><span class="line"> -duration duration  </span><br><span class="line"> 指定发送请求到目标主机的时长，用 0 表示永久。  </span><br><span class="line"> -header value  </span><br><span class="line"> 指定目标的请求头，可以重复指定多个请求头。  </span><br><span class="line"> -http2  </span><br><span class="line"> 指定是否向支持的服务器发送 HTTP/2 请求，默认为：true。  </span><br><span class="line"> -insecure  </span><br><span class="line"> 指定是否忽略无效的服务器 TLS 证书。  </span><br><span class="line"> -keepalive  </span><br><span class="line"> 指定是否使用持久链接，默认值为：true。  </span><br><span class="line"> -key string  </span><br><span class="line"> 指定 HTTPS 请求中使用的 PEM 编码的 SSL 客户端证书私钥文件。  </span><br><span class="line"> -laddr value  </span><br><span class="line"> 指定要使用的本地 I P地址，默认值为：0.0.0.0。  </span><br><span class="line"> -lazy  </span><br><span class="line"> 指定是否使用延迟模式读取目标。  </span><br><span class="line"> -output string  </span><br><span class="line"> 指定输出文件的位置，默认为标准输出。  </span><br><span class="line"> -rate uint  </span><br><span class="line"> 指定每秒钟对目标发送的请求数，默认值为：50。  </span><br><span class="line"> -redirects int  </span><br><span class="line"> 指定每个请求的重定向的最大次数，默认为 10 次。当值为 -1, 不会遵循重定向但响应标记为成功。  </span><br><span class="line"> -root-certs value  </span><br><span class="line"> 指定可信的 TLS 根证书文件，多个的情况下使用逗号分隔。如果未指定，使用系统默认的 CA 证书。  </span><br><span class="line"> -targets string  </span><br><span class="line"> 指定目标文件，默认为标准输入。  </span><br><span class="line"> -timeout duration  </span><br><span class="line"> 指定每个请求的超时时间，默认值为 30s。  </span><br><span class="line"> -workers uint  </span><br><span class="line"> 指定初始化进程数量，默认值为 10。  </span><br><span class="line">  </span><br><span class="line">report command:  </span><br><span class="line"> -inputs string  </span><br><span class="line"> 指定报告输入文件，默认为标准输入。  </span><br><span class="line"> -output string  </span><br><span class="line"> 指定报告输出文件，默认为标准输出。  </span><br><span class="line"> -reporter string  </span><br><span class="line"> 指定要生成的报告的格式，支持 text，json, plot, hist[buckets]。默认为文本。  </span><br><span class="line">   </span><br><span class="line">dump command:  </span><br><span class="line"> -dumper string  </span><br><span class="line"> 指定转存文件，支持 json, csv 格式。默认为 json 格式。  </span><br><span class="line"> -inputs string  </span><br><span class="line"> 指定要转存的输入文件，默认为标准输入，指定多个用逗号分隔。  </span><br><span class="line"> -output string  </span><br><span class="line"> 指定要转存的输出文件，默认为标准输出。</span><br></pre></td></tr></table></figure>
+
+<h2 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h2><h3 id="GET"><a href="#GET" class="headerlink" title="GET"></a>GET</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">echo &quot;GET http://www.baidu.com&quot; | vegeta attack -rate=50 -connections=1 -duration=1s | tee results.bin | vegeta report</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash">tee houminxi.bin <span class="comment">#将vegeta的请求结果以二进制的格式保存起来。这个文件最主要的作用是如果你以后分布式执行压测，那么最后使用vegeta report统计结果的时候则需要使用每台压测机器上该文件。</span></span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>rate : 每秒发送qing请求数</li>
+<li>connection : 主机打开的空闲连接数</li>
+<li>duration : 放松请求到主机的时长</li>
+</ul>
+<p>返回结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Requests      [total, rate, throughput]         50, 51.07, 49.21</span><br><span class="line">Duration      [total, attack, wait]             1.016s, 978.964ms, 37.086ms</span><br><span class="line">Latencies     [min, mean, 50, 90, 95, 99, max]  18.227ms, 51.221ms, 31.514ms, 116.864ms, 144.458ms, 240.26ms, 240.26ms</span><br><span class="line">Bytes In      [total, mean]                     17465200, 349304.00</span><br><span class="line">Bytes Out     [total, mean]                     0, 0.00</span><br><span class="line">Success       [ratio]                           100.00%</span><br><span class="line">Status Codes  [code:count]                      200:50</span><br><span class="line">Error Set:</span><br></pre></td></tr></table></figure>
+
+<h3 id="POST"><a href="#POST" class="headerlink" title="POST"></a>POST</h3><p>post请求要按照webserver所给出的格式来填写对应的路径和请求参数。vegeta提供-targets来读取你在文本内所定义的目标请求端。提供-body指定一个文件，该文件的内容将被设置为每个请求的主体，注意请求主题如果在body中指定了就不要在target的文件中指定了，否则会被target文件中的设置所覆盖。</p>
+<ul>
+<li><p>原始的curl命令调用</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">curl -H &quot;Accept: application/json&quot; -H &quot;Content-type: application/json&quot; -X POST -d &#x27;&#123;&quot;version&quot;:&quot;1.0&quot;,&quot;caller&quot;:&quot;DES&quot;,&quot;password&quot;:&quot;DES&quot;,&quot;callee&quot;:&quot;TDSQL&quot;,&quot;eventId&quot;:101,&quot;timestamp&quot;:1435749309,&quot;interface&quot;:&#123;&quot;interfaceName&quot;:&quot;TDSQL.GetInstance&quot;,&quot;para&quot;:&#123;&quot;instance&quot;:[&#123;&quot;id&quot;:&quot;set_1614047032_1141&quot;&#125;]&#125;&#125;&#125;&#x27; 9.30.1.233:8080/tdsql</span><br></pre></td></tr></table></figure></li>
+<li><p>定义一个<code>target.txt</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST http://9.30.1.233:8080/tdsql</span><br></pre></td></tr></table></figure></li>
+<li><p>定义一个json <code>body.json</code></p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;  </span><br><span class="line"> <span class="attr">&quot;version&quot;</span>:<span class="string">&quot;1.0&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;caller&quot;</span>:<span class="string">&quot;DES&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;password&quot;</span>:<span class="string">&quot;DES&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;callee&quot;</span>:<span class="string">&quot;TDSQL&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;eventId&quot;</span>:<span class="number">101</span>,  </span><br><span class="line"> <span class="attr">&quot;timestamp&quot;</span>:<span class="number">1435749309</span>,  </span><br><span class="line"> <span class="attr">&quot;interface&quot;</span>:&#123;  </span><br><span class="line">        <span class="attr">&quot;interfaceName&quot;</span>:<span class="string">&quot;TDSQL.GetInstance&quot;</span>,  </span><br><span class="line">        <span class="attr">&quot;para&quot;</span>:&#123;  </span><br><span class="line">            <span class="attr">&quot;instance&quot;</span>:[  </span><br><span class="line">                &#123;  </span><br><span class="line">                    <span class="attr">&quot;id&quot;</span>:<span class="string">&quot;set_1614047032_1141&quot;</span>  </span><br><span class="line">                &#125;  </span><br><span class="line">            ]  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>vegeta命令</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">vegeta -cpus 24 attack -targets target.txt -body body.json -timeout=20s -rate 500 -duration=10s | vegeta report</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="结果分析"><a href="#结果分析" class="headerlink" title="结果分析"></a>结果分析</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Requests      [total, rate, throughput]         5000, 500.09, 487.50</span><br><span class="line">Duration      [total, attack, wait]             10.256s, 9.998s, 258.046ms</span><br><span class="line">Latencies     [min, mean, 50, 90, 95, 99, max]  36.38ms, 57.077ms, 51.602ms, 62.614ms, 70.48ms, 279.916ms, 1.124s</span><br><span class="line">Bytes In      [total, mean]                     705000, 141.00</span><br><span class="line">Bytes Out     [total, mean]                     1710000, 342.00</span><br><span class="line">Success       [ratio]                           100.00%</span><br><span class="line">Status Codes  [code:count]                      200:5000</span><br><span class="line">Error Set:</span><br></pre></td></tr></table></figure>
+
+<p><code>Requests</code> :</p>
+<ul>
+<li>   <code>total</code>  : 全部的请求数量</li>
+<li>  <code>rate</code> : 真正的每秒请求速率</li>
+<li>  <code>throughput</code> : 整个周期期间成功的请求速率</li>
+</ul>
+<p><code>Duration</code> :</p>
+<ul>
+<li><code>attack</code> : 所有请求所用的时间(<code>total</code> - <code>wait</code>) </li>
+<li><code>wait</code> : 等待最后一次发出请求响应的等待时间(<code>total</code> - <code>attack</code>)</li>
+<li><code>total</code> : 总时间</li>
+</ul>
+<p><code>Latency</code> : </p>
+<ul>
+<li><code>min</code> : 所有请求中最小的延迟</li>
+<li><code>mean</code> : 平均</li>
+<li>50、90、95、99 分别是攻击中所有请求延迟的第 50、90、95 和 99 个百分位数。</li>
+<li><code>max</code> : 最大的延迟</li>
+</ul>
+<p><code>Bytes In</code> &amp; <code>Bytes Out</code></p>
+<ul>
+<li>与请求或响应正文一起发送（输出）或接收（输入）的字节总数。</li>
+</ul>
+<p><code>Success</code></p>
+<ul>
+<li><code>ratio</code> : 成功率显示响应未出错且状态代码介于 200 和 400（不包括在内）之间的请求的百分比。</li>
+</ul>
+<p><code>Status Codes</code></p>
+<ul>
+<li>显示状态代码的直方图。 0 状态码表示请求发送失败。</li>
+</ul>
+<p><code>Error Set</code></p>
+<ul>
+<li>错误集显示所有发出的请求返回的一组唯一错误。 其中包括获得不成功响应状态代码的请求。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>测试</category>
+      </categories>
+      <tags>
+        <tag>vegeta</tag>
+        <tag>测试</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>分布式系统架构的本质</title>
+    <url>/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/</url>
+    <content><![CDATA[<hr>
+<h2 id="为什么需要分布式系统"><a href="#为什么需要分布式系统" class="headerlink" title="为什么需要分布式系统"></a>为什么需要分布式系统</h2><ul>
+<li>增大系统容量</li>
+<li>加强系统可用性<span id="more"></span>
+<!-- toc --></li>
+</ul>
+<p> <img src="/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/20220725195309.png"><br>也就是说，分布式系统架构的难点在于系统设计，以及管理和运维</p>
+<h3 id="SOA——基于服务的架构"><a href="#SOA——基于服务的架构" class="headerlink" title="SOA——基于服务的架构"></a>SOA——基于服务的架构</h3><p>SOA 架构是构造分布式计算应用程序的方法。它将应用程序功能作为服务发送给最终用户或者其他服务。<br>可重用，粒度合适，模块化，可组合，构件化以及有互操作性。符合开放标准（通用的或行业的）。服务的识别和分类，提供和发布，监控和跟踪。</p>
+<h2 id="分布式系统需要注意的问题"><a href="#分布式系统需要注意的问题" class="headerlink" title="分布式系统需要注意的问题"></a>分布式系统需要注意的问题</h2><h3 id="分布式系统中的不标准问题"><a href="#分布式系统中的不标准问题" class="headerlink" title="分布式系统中的不标准问题"></a>分布式系统中的不标准问题</h3><ul>
+<li>软件和应用不标准。</li>
+<li>通讯协议不标准。</li>
+<li>数据格式不标准。</li>
+<li>开发和运维的过程和方法不标准。</li>
+</ul>
+<h3 id="系统构架中的服务依赖性问题"><a href="#系统构架中的服务依赖性问题" class="headerlink" title="系统构架中的服务依赖性问题"></a>系统构架中的服务依赖性问题</h3><ul>
+<li>如果非关键业务被关键业务所依赖，会导致非关键业务变成一个关键业务。服务依赖</li>
+<li>服务依赖链中，出现“木桶短板效应”——整个 SLA 由最差的那个服务所决定。</li>
+</ul>
+<h3 id="故障发生概率更大"><a href="#故障发生概率更大" class="headerlink" title="故障发生概率更大"></a>故障发生概率更大</h3><p>在分布式系统中，因为使用的机器和服务会非常多，所以，故障发生的频率会比传统的单体应用更大。只不过，单体应用的故障影响面很大，而分布式系统中，虽然故障的影响面可以被隔离，但是因为机器和服务多，出故障的频率也会多。另一方面，因为管理复杂，而且没人知道整个架构中有什么，所以非常容易犯错误。</p>
+<h3 id="多层架构的运维复杂度更大"><a href="#多层架构的运维复杂度更大" class="headerlink" title="多层架构的运维复杂度更大"></a>多层架构的运维复杂度更大</h3><p>通常来说，我们可以把系统分成四层：</p>
+<ul>
+<li>基础层、平台层、应用层和接入层。基础层就是我们的机器、网络和存储设备等。</li>
+<li>平台层就是我们的中间件层，Tomcat、MySQL、Redis、Kafka 之类的软件。</li>
+<li>应用层就是我们的业务软件，比如，各种功能的服务。</li>
+<li>接入层就是接入用户请求的网关、负载均衡或是 CDN、DNS 这样的东西。</li>
+</ul>
+<h2 id="分布式系统的目的"><a href="#分布式系统的目的" class="headerlink" title="分布式系统的目的"></a>分布式系统的目的</h2><p>正如我们前面所说的，构建分布式系统的目的是增加系统容量，提高系统的可用性，转换成技术方面，也就是完成下面两件事。</p>
+<ul>
+<li>大流量处理：通过集群技术把大规模并发请求的负载分散到不同的机器上。</li>
+<li>关键业务保护：提高后台服务的可用性，把故障隔离起来阻止多米诺骨牌效应（雪崩效应）。如果流量过大，需要对业务降级，以保护关键业务流转。</li>
+</ul>
+<p>说白了就是干两件事。一是提高整体架构的吞吐量，服务更多的并发和流量，二是为了提高系统的稳定性，让系统的可用性更高。</p>
+<h3 id="提高架构的性能"><a href="#提高架构的性能" class="headerlink" title="提高架构的性能"></a>提高架构的性能</h3><p><img src="/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/20220725202848.png"></p>
+<ul>
+<li><strong>缓存系统</strong>：对于分布式系统下的缓存系统，需要的是一个缓存集群。这其中需要一个 Proxy 来做缓存的分片和路由。</li>
+<li><strong>负载均衡系统</strong>：负载均衡系统是水平扩展的关键技术，它可以使用多台机器来共同分担一部分流量请求。</li>
+<li><strong>异步调用</strong>：异步系统主要通过消息队列来对请求做排队处理，这样可以把前端的请求的峰值给“削平”了，而后端通过自己能够处理的速度来处理请求。这样可以增加系统的吞吐量，但是实时性就差很多了。同时，还会引入消息丢失的问题，所以要对消息做持久化，这会造成“有状态”的结点，从而增加了服务调度的难度。</li>
+<li><strong>数据分区和数据镜像</strong>：数据分区是把数据按一定的方式分成多个区；而数据镜像是把一个数据库镜像成多份一样的数据，这样就不需要数据路由的中间件了。初期一般采用读写分离的方式。</li>
+</ul>
+<h3 id="提高架构的稳定性"><a href="#提高架构的稳定性" class="headerlink" title="提高架构的稳定性"></a>提高架构的稳定性</h3><p><img src="/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/20220725203404.png"></p>
+<ul>
+<li><strong>服务拆分</strong>：1.隔离故障；2.重用服务模块（但是会带来服务调用见的依赖问题）</li>
+<li><strong>服务冗余</strong>：服务冗余是为了去除单点故障，并可以支持服务的弹性伸缩，以及故障迁移。</li>
+<li><strong>限流降级</strong>：当系统实在扛不住压力时，只能通过限流或者功能降级的方式来停掉一部分服务，或是拒绝一部分用户，以确保整个架构不会挂掉。</li>
+<li><strong>高可用架构</strong>：总之，就是为了不出单点故障。</li>
+<li><strong>高可用运维</strong>：高可用运维指的是 DevOps 中的 CI/CD（持续集成 / 持续部署）。</li>
+</ul>
+<h3 id="分布式服务的关键技术"><a href="#分布式服务的关键技术" class="headerlink" title="分布式服务的关键技术"></a>分布式服务的关键技术</h3><ul>
+<li><strong>服务治理</strong>：服务拆分、服务调用、服务发现、服务依赖、服务的关键度定义</li>
+<li><strong>构架软件管理</strong>: </li>
+<li><strong>DevOps</strong>:</li>
+<li><strong>自动化运维</strong>:</li>
+<li><strong>资源调度管理</strong></li>
+<li><strong>整体构架监控</strong></li>
+<li><strong>流量控制</strong><br>又可以分为：全栈系统监控，服务/资源调度，流量调度，状态/数据调度；开发和运维的自动化。</li>
+</ul>
+<h2 id="全栈系统监控"><a href="#全栈系统监控" class="headerlink" title="全栈系统监控"></a>全栈系统监控</h2><h3 id="多层监控"><a href="#多层监控" class="headerlink" title="多层监控"></a>多层监控</h3><ul>
+<li><strong>基础层</strong>：监控主机和底层资源。（cpu, 内存, 网络吞吐, 硬盘I/O, 硬盘使用）</li>
+<li><strong>中间层</strong>：中间件层的监控。(Nginx, Redis, MySQL, Kafka)</li>
+<li><strong>应用层</strong>：监控应用层的使用。（http访问吞吐量, 响应时间, 返回码）</li>
+</ul>
+<p>监控标准化: </p>
+<ul>
+<li>日志数据结构化</li>
+<li>监控数据格式化</li>
+<li>统一的监控平台</li>
+<li>统一的日志分析</li>
+</ul>
+<p>好的监控系统需要: </p>
+<ul>
+<li>服务调用链跟踪</li>
+<li>服务调用时长分布</li>
+<li>服务top n视图</li>
+<li>数据库操作关联</li>
+<li>服务资源跟踪</li>
+</ul>
+<h2 id="服务治理"><a href="#服务治理" class="headerlink" title="服务治理"></a>服务治理</h2><h3 id="服务关键程度和服务的依赖关系"><a href="#服务关键程度和服务的依赖关系" class="headerlink" title="服务关键程度和服务的依赖关系"></a>服务关键程度和服务的依赖关系</h3><p>微服务是服务依赖最优解的上限，而服务依赖的下限是千万不要有依赖环。如果系统架构中有服务依赖环，那么表明你的架构设计是错误的。循环依赖有很多的副作用，最大的问题是这是一种极强的耦合，会导致服务部署相当复杂和难解，而且会导致无穷尽的递归故障和一些你意想不到的问题。</p>
+<h3 id="服务状态和生命周期的管理"><a href="#服务状态和生命周期的管理" class="headerlink" title="服务状态和生命周期的管理"></a>服务状态和生命周期的管理</h3><p>我们还需要有一个<strong>服务发现的中间件</strong>，这个中间件是非常非常关键的。因为这个“架构城市”是非常动态的，有的服务会新加进来，有的会离开，有的会增加更多的实例，有的会减少，有的服务在维护过程中（发布、伸缩等），所以我们需要有一个服务注册中心，来知道这么几个事。</p>
+<h3 id="整个构架的版本管理"><a href="#整个构架的版本管理" class="headerlink" title="整个构架的版本管理"></a>整个构架的版本管理</h3><p>除了各个项目的版本管理之外，还需要在上面再盖一层版本管理。</p>
+<h3 id="资源-服务调度"><a href="#资源-服务调度" class="headerlink" title="资源/服务调度"></a>资源/服务调度</h3><h4 id="服务状态的维持和拟合"><a href="#服务状态的维持和拟合" class="headerlink" title="服务状态的维持和拟合"></a>服务状态的维持和拟合</h4><p>比如，当需要对集群进行 Scale 的时候，我们需要：<br>先扩展出几个结点；<br>再往上部署服务；<br>然后启动服务；<br>再检查服务的健康情况；<br>最后把新扩展出来的服务实例加入服务发现中提供服务。</p>
+<h4 id="服务的弹性伸缩和故障迁移"><a href="#服务的弹性伸缩和故障迁移" class="headerlink" title="服务的弹性伸缩和故障迁移"></a>服务的弹性伸缩和故障迁移</h4><p>两种故障迁移模式：</p>
+<ul>
+<li>宠物模式：就是一定要救活，主要是对于 stateful 的服务。</li>
+<li>奶牛模式：就是不用救活了，重新生成一个实例。</li>
+</ul>
+<h4 id="服务工作流和编排"><a href="#服务工作流和编排" class="headerlink" title="服务工作流和编排"></a>服务工作流和编排</h4><ul>
+<li>Choreography : 相互协作</li>
+<li>Orchestration : 指挥机制</li>
+<li>微服务: 消息队列来做编排</li>
+</ul>
+<h2 id="流量与数据调度"><a href="#流量与数据调度" class="headerlink" title="流量与数据调度"></a>流量与数据调度</h2><h3 id="主要功能："><a href="#主要功能：" class="headerlink" title="主要功能："></a>主要功能：</h3><ul>
+<li>依据系统运行的情况，自动地进行流量调度</li>
+<li>让系统应对爆品等突发事件时，在弹性计算扩缩容的较长时间窗口内或底层资源消耗殆尽的情况下，保护系统平稳运行。<br>还需完成：</li>
+<li>服务流控: 服务发现、服务路由、服务降级、服务熔断、服务保护等。</li>
+<li>流量控制: 负载均衡、流量分配、流量控制、异地灾备（多活）等。</li>
+<li>流量管理: 协议转换、请求校验、数据缓存、数据计算等。</li>
+</ul>
+<p>SLA：服务等级协议（简称：_SLA_，全称：_service level agreement_）<br>PaaS：是（_Platform as a Service_）的缩写，是指平台即服务。 把服务器平台作为一种服务提供的商业模式。<br>_IaaS_（Infrastructure as a Service），即基础设施即服务。</p>
+<h2 id="PaaS平台的本质"><a href="#PaaS平台的本质" class="headerlink" title="PaaS平台的本质"></a>PaaS平台的本质</h2><ul>
+<li>服务化是 PaaS 的本质。软件模块重用，服务治理，对外提供能力是 PaaS 的本质。</li>
+<li>分布式是 PaaS 的根本特性。多租户隔离、高可用、服务编排是 PaaS 的基本特性。</li>
+<li>自动化是 PaaS 的灵魂。自动化部署安装运维，自动化伸缩调度是 PaaS 的关键。</li>
+</ul>
+<p>总结一下，一个完整的 PaaS 平台会包括以下几部分。</p>
+<ul>
+<li>PaaS 调度层 – 主要是 PaaS 的自动化和分布式对于高可用高性能的管理。</li>
+<li>PaaS 能力服务层 – 主要是 PaaS 真正提供给用户的服务和能力。</li>
+<li>PaaS 的流量调度 – 主要是与流量调度相关的东西，包括对高并发的管理。</li>
+<li>PaaS 的运营管理 – 软件资源库、软件接入、认证和开放平台门户。PaaS 的运维管理 – 主要是 DevOps 相关的东西。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>分布式系统</category>
+        <category>总述</category>
+      </categories>
+      <tags>
+        <tag>分布式</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>obsidian_markdown</title>
     <url>/2022/02/09/obsidian-markdown/</url>
     <content><![CDATA[<hr>
@@ -1934,80 +2277,61 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
       </tags>
   </entry>
   <entry>
-    <title>vegeta测试</title>
-    <url>/2022/04/14/vegete%E6%B5%8B%E8%AF%95/</url>
-    <content><![CDATA[<p>Vegeta 是一个用 Go 语言编写的多功能的 HTTP 负载测试工具，它提供了命令行工具和一个开发库。 </p>
+    <title>一致性算法</title>
+    <url>/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<hr>
+<p>要解决数据不丢失的问题，只能通过数据冗余的方法，就算是数据分区，每个区也需要进行数据冗余处理。这就是数据副本。当出现某个节点的数据丢失时，可以从副本读到。数据副本是分布式系统解决数据丢失异常的唯一手段。<br>在数据副本的情况下，如何解决分布式数据一致性：</p>
 <span id="more"></span>
-
 <!-- toc -->
 
-<h2 id="什么是-Vegeta"><a href="#什么是-Vegeta" class="headerlink" title="什么是 Vegeta"></a><strong>什么是 Vegeta</strong></h2><p><a href="https://github.com/tsenart/vegeta">官方地址</a></p>
-<h2 id="Vegeta-用法"><a href="#Vegeta-用法" class="headerlink" title="Vegeta 用法"></a>Vegeta 用法</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">vegeta --help  </span><br><span class="line">Usage: vegeta [global flags] &lt;command&gt; [command flags]  </span><br><span class="line">   </span><br><span class="line">global flags:  </span><br><span class="line"> -cpus int  </span><br><span class="line"> 使用 CPU 的数量 (默认为 4 个)  </span><br><span class="line"> -profile string  </span><br><span class="line"> 指定在执行期间启用哪个分析器，支持 cpu 和 heap。   </span><br><span class="line"> -version  </span><br><span class="line"> 打印版本并退出。  </span><br><span class="line">   </span><br><span class="line">attack command:  </span><br><span class="line"> -body string  </span><br><span class="line"> 指定请求主体文件里的内容。  </span><br><span class="line"> -cert string  </span><br><span class="line"> 指定用于 HTTPS 请求的 PEM 格式的客户端证书文件。如果 -key 未指定，它会被设置为这个标志的值。  </span><br><span class="line"> -connections int  </span><br><span class="line"> 指定每个目标主机打开的空闲连接的最大数目，默认值为 10000。  </span><br><span class="line"> -duration duration  </span><br><span class="line"> 指定发送请求到目标主机的时长，用 0 表示永久。  </span><br><span class="line"> -header value  </span><br><span class="line"> 指定目标的请求头，可以重复指定多个请求头。  </span><br><span class="line"> -http2  </span><br><span class="line"> 指定是否向支持的服务器发送 HTTP/2 请求，默认为：true。  </span><br><span class="line"> -insecure  </span><br><span class="line"> 指定是否忽略无效的服务器 TLS 证书。  </span><br><span class="line"> -keepalive  </span><br><span class="line"> 指定是否使用持久链接，默认值为：true。  </span><br><span class="line"> -key string  </span><br><span class="line"> 指定 HTTPS 请求中使用的 PEM 编码的 SSL 客户端证书私钥文件。  </span><br><span class="line"> -laddr value  </span><br><span class="line"> 指定要使用的本地 I P地址，默认值为：0.0.0.0。  </span><br><span class="line"> -lazy  </span><br><span class="line"> 指定是否使用延迟模式读取目标。  </span><br><span class="line"> -output string  </span><br><span class="line"> 指定输出文件的位置，默认为标准输出。  </span><br><span class="line"> -rate uint  </span><br><span class="line"> 指定每秒钟对目标发送的请求数，默认值为：50。  </span><br><span class="line"> -redirects int  </span><br><span class="line"> 指定每个请求的重定向的最大次数，默认为 10 次。当值为 -1, 不会遵循重定向但响应标记为成功。  </span><br><span class="line"> -root-certs value  </span><br><span class="line"> 指定可信的 TLS 根证书文件，多个的情况下使用逗号分隔。如果未指定，使用系统默认的 CA 证书。  </span><br><span class="line"> -targets string  </span><br><span class="line"> 指定目标文件，默认为标准输入。  </span><br><span class="line"> -timeout duration  </span><br><span class="line"> 指定每个请求的超时时间，默认值为 30s。  </span><br><span class="line"> -workers uint  </span><br><span class="line"> 指定初始化进程数量，默认值为 10。  </span><br><span class="line">  </span><br><span class="line">report command:  </span><br><span class="line"> -inputs string  </span><br><span class="line"> 指定报告输入文件，默认为标准输入。  </span><br><span class="line"> -output string  </span><br><span class="line"> 指定报告输出文件，默认为标准输出。  </span><br><span class="line"> -reporter string  </span><br><span class="line"> 指定要生成的报告的格式，支持 text，json, plot, hist[buckets]。默认为文本。  </span><br><span class="line">   </span><br><span class="line">dump command:  </span><br><span class="line"> -dumper string  </span><br><span class="line"> 指定转存文件，支持 json, csv 格式。默认为 json 格式。  </span><br><span class="line"> -inputs string  </span><br><span class="line"> 指定要转存的输入文件，默认为标准输入，指定多个用逗号分隔。  </span><br><span class="line"> -output string  </span><br><span class="line"> 指定要转存的输出文件，默认为标准输出。</span><br></pre></td></tr></table></figure>
+<h2 id="一致性模型"><a href="#一致性模型" class="headerlink" title="一致性模型"></a>一致性模型</h2><ul>
+<li><strong>weak若一致性</strong>：当你写入一个新值后，读操作在数据副本上可能读出来，也可能读不出来。</li>
+<li><strong>Eventually最终一致性</strong>：当你写入一个新值后，有可能读不出来，但在某个时间窗口之后保证最终能读出来。</li>
+<li><strong>Strong强一致性</strong>：新的数据一旦写入，在任意副本任意时刻都能读到新值。</li>
+</ul>
+<h2 id="Basic-Paxos算法"><a href="#Basic-Paxos算法" class="headerlink" title="Basic Paxos算法"></a>Basic Paxos算法</h2><h3 id="决议的提出与批准"><a href="#决议的提出与批准" class="headerlink" title="决议的提出与批准"></a>决议的提出与批准</h3><ol>
+<li>prepare阶段：<ol>
+<li> proposer选择一个提案编号n并将prepare请求发送给acceptors中的一个多数派；</li>
+<li> acceptor收到prepare消息后，如果提案的编号大于它已经回复的所有prepare消息(回复消息表示接受accept)，则acceptor将自己上次接受的提案回复给proposer，并承诺不再回复小于n的提案；</li>
+</ol>
+</li>
+<li>批准阶段：<ol>
+<li> 当一个proposer收到了多数acceptors对prepare的回复后，就进入批准阶段。它要向回复prepare请求的acceptors发送accept请求，包括编号n和根据P2c决定的value（如果根据P2c没有已经接受的value，那么它可以自由决定value）。</li>
+<li> 在不违背自己向其他proposer的承诺的前提下，acceptor收到accept请求后即批准这个请求。</li>
+</ol>
+</li>
+</ol>
+<p>这个过程在任何时候中断都可以保证正确性。例如如果一个proposer发现已经有其他proposers提出了编号更高的提案，则有必要中断这个过程。因此为了优化，在上述prepare过程中，如果一个acceptor发现存在一个更高编号的提案，则需要通知proposer，提醒其中断这次提案。</p>
+<p>本质上就是一个这实际上退化为<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4" title="二阶段提交">二阶段提交</a>协议。</p>
+<h2 id="Multi-Paxos算法"><a href="#Multi-Paxos算法" class="headerlink" title="Multi-Paxos算法"></a>Multi-Paxos算法</h2><ul>
+<li>Basic Paxos</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Client   Proposer      Acceptor     Learner</span><br><span class="line">   |         |          |  |  |       |  | --- First Request ---</span><br><span class="line">   X--------&gt;|          |  |  |       |  |  Request</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Prepare(N)</span><br><span class="line">   |         |&lt;---------X--X--X       |  |  Promise(N,I,&#123;Va,Vb,Vc&#125;)</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Accept!(N,I,V)</span><br><span class="line">   |         |&lt;---------X--X--X------&gt;|-&gt;|  Accepted(N,I,V)</span><br><span class="line">   |&lt;---------------------------------X--X  Response</span><br><span class="line">   |         |          |  |  |       |  |</span><br></pre></td></tr></table></figure>
 
-<h2 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h2><h3 id="GET"><a href="#GET" class="headerlink" title="GET"></a>GET</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">echo &quot;GET http://www.baidu.com&quot; | vegeta attack -rate=50 -connections=1 -duration=1s | tee results.bin | vegeta report</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash">tee houminxi.bin <span class="comment">#将vegeta的请求结果以二进制的格式保存起来。这个文件最主要的作用是如果你以后分布式执行压测，那么最后使用vegeta report统计结果的时候则需要使用每台压测机器上该文件。</span></span></span><br></pre></td></tr></table></figure>
 <ul>
-<li>rate : 每秒发送qing请求数</li>
-<li>connection : 主机打开的空闲连接数</li>
-<li>duration : 放松请求到主机的时长</li>
+<li>跳过阶段1时的Multi-Paxos</li>
 </ul>
-<p>返回结果:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Requests      [total, rate, throughput]         50, 51.07, 49.21</span><br><span class="line">Duration      [total, attack, wait]             1.016s, 978.964ms, 37.086ms</span><br><span class="line">Latencies     [min, mean, 50, 90, 95, 99, max]  18.227ms, 51.221ms, 31.514ms, 116.864ms, 144.458ms, 240.26ms, 240.26ms</span><br><span class="line">Bytes In      [total, mean]                     17465200, 349304.00</span><br><span class="line">Bytes Out     [total, mean]                     0, 0.00</span><br><span class="line">Success       [ratio]                           100.00%</span><br><span class="line">Status Codes  [code:count]                      200:50</span><br><span class="line">Error Set:</span><br></pre></td></tr></table></figure>
+<p>在这种情况下，Basic Paxos的后续实例(由I+1表示)使用相同的Leader，因此，包含在Prepare和Promise的阶段1(Basic Paxos协议的这些后续实例)将被跳过。注意，这里要求Leader应该是稳定的，即它不应该崩溃或改变。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Client   Proposer       Acceptor     Learner</span><br><span class="line">   |         |          |  |  |       |  |  --- Following Requests ---</span><br><span class="line">   X--------&gt;|          |  |  |       |  |  Request</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Accept!(N,I+1,W)</span><br><span class="line">   |         |&lt;---------X--X--X------&gt;|-&gt;|  Accepted(N,I+1,W)</span><br><span class="line">   |&lt;---------------------------------X--X  Response</span><br><span class="line">   |         |          |  |  |       |  |</span><br></pre></td></tr></table></figure>
 
-<h3 id="POST"><a href="#POST" class="headerlink" title="POST"></a>POST</h3><p>post请求要按照webserver所给出的格式来填写对应的路径和请求参数。vegeta提供-targets来读取你在文本内所定义的目标请求端。提供-body指定一个文件，该文件的内容将被设置为每个请求的主体，注意请求主题如果在body中指定了就不要在target的文件中指定了，否则会被target文件中的设置所覆盖。</p>
-<ul>
-<li><p>原始的curl命令调用</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">curl -H &quot;Accept: application/json&quot; -H &quot;Content-type: application/json&quot; -X POST -d &#x27;&#123;&quot;version&quot;:&quot;1.0&quot;,&quot;caller&quot;:&quot;DES&quot;,&quot;password&quot;:&quot;DES&quot;,&quot;callee&quot;:&quot;TDSQL&quot;,&quot;eventId&quot;:101,&quot;timestamp&quot;:1435749309,&quot;interface&quot;:&#123;&quot;interfaceName&quot;:&quot;TDSQL.GetInstance&quot;,&quot;para&quot;:&#123;&quot;instance&quot;:[&#123;&quot;id&quot;:&quot;set_1614047032_1141&quot;&#125;]&#125;&#125;&#125;&#x27; 9.30.1.233:8080/tdsql</span><br></pre></td></tr></table></figure></li>
-<li><p>定义一个<code>target.txt</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST http://9.30.1.233:8080/tdsql</span><br></pre></td></tr></table></figure></li>
-<li><p>定义一个json <code>body.json</code></p>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;  </span><br><span class="line"> <span class="attr">&quot;version&quot;</span>:<span class="string">&quot;1.0&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;caller&quot;</span>:<span class="string">&quot;DES&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;password&quot;</span>:<span class="string">&quot;DES&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;callee&quot;</span>:<span class="string">&quot;TDSQL&quot;</span>,  </span><br><span class="line"> <span class="attr">&quot;eventId&quot;</span>:<span class="number">101</span>,  </span><br><span class="line"> <span class="attr">&quot;timestamp&quot;</span>:<span class="number">1435749309</span>,  </span><br><span class="line"> <span class="attr">&quot;interface&quot;</span>:&#123;  </span><br><span class="line">        <span class="attr">&quot;interfaceName&quot;</span>:<span class="string">&quot;TDSQL.GetInstance&quot;</span>,  </span><br><span class="line">        <span class="attr">&quot;para&quot;</span>:&#123;  </span><br><span class="line">            <span class="attr">&quot;instance&quot;</span>:[  </span><br><span class="line">                &#123;  </span><br><span class="line">                    <span class="attr">&quot;id&quot;</span>:<span class="string">&quot;set_1614047032_1141&quot;</span>  </span><br><span class="line">                &#125;  </span><br><span class="line">            ]  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li><p>vegeta命令</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">vegeta -cpus 24 attack -targets target.txt -body body.json -timeout=20s -rate 500 -duration=10s | vegeta report</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h3 id="结果分析"><a href="#结果分析" class="headerlink" title="结果分析"></a>结果分析</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Requests      [total, rate, throughput]         5000, 500.09, 487.50</span><br><span class="line">Duration      [total, attack, wait]             10.256s, 9.998s, 258.046ms</span><br><span class="line">Latencies     [min, mean, 50, 90, 95, 99, max]  36.38ms, 57.077ms, 51.602ms, 62.614ms, 70.48ms, 279.916ms, 1.124s</span><br><span class="line">Bytes In      [total, mean]                     705000, 141.00</span><br><span class="line">Bytes Out     [total, mean]                     1710000, 342.00</span><br><span class="line">Success       [ratio]                           100.00%</span><br><span class="line">Status Codes  [code:count]                      200:5000</span><br><span class="line">Error Set:</span><br></pre></td></tr></table></figure>
-
-<p><code>Requests</code> :</p>
-<ul>
-<li>   <code>total</code>  : 全部的请求数量</li>
-<li>  <code>rate</code> : 真正的每秒请求速率</li>
-<li>  <code>throughput</code> : 整个周期期间成功的请求速率</li>
-</ul>
-<p><code>Duration</code> :</p>
-<ul>
-<li><code>attack</code> : 所有请求所用的时间(<code>total</code> - <code>wait</code>) </li>
-<li><code>wait</code> : 等待最后一次发出请求响应的等待时间(<code>total</code> - <code>attack</code>)</li>
-<li><code>total</code> : 总时间</li>
-</ul>
-<p><code>Latency</code> : </p>
-<ul>
-<li><code>min</code> : 所有请求中最小的延迟</li>
-<li><code>mean</code> : 平均</li>
-<li>50、90、95、99 分别是攻击中所有请求延迟的第 50、90、95 和 99 个百分位数。</li>
-<li><code>max</code> : 最大的延迟</li>
-</ul>
-<p><code>Bytes In</code> &amp; <code>Bytes Out</code></p>
-<ul>
-<li>与请求或响应正文一起发送（输出）或接收（输入）的字节总数。</li>
-</ul>
-<p><code>Success</code></p>
-<ul>
-<li><code>ratio</code> : 成功率显示响应未出错且状态代码介于 200 和 400（不包括在内）之间的请求的百分比。</li>
-</ul>
-<p><code>Status Codes</code></p>
-<ul>
-<li>显示状态代码的直方图。 0 状态码表示请求发送失败。</li>
-</ul>
-<p><code>Error Set</code></p>
-<ul>
-<li>错误集显示所有发出的请求返回的一组唯一错误。 其中包括获得不成功响应状态代码的请求。</li>
-</ul>
+<h2 id="Raft算法"><a href="#Raft算法" class="headerlink" title="Raft算法"></a>Raft算法</h2><p><strong>Raft</strong>是一种用于替代<a href="https://zh.wikipedia.org/wiki/Paxos" title="Paxos">Paxos</a>的<a href="https://zh.wikipedia.org/wiki/%E5%85%B1%E8%AD%98%E6%A9%9F%E5%88%B6" title="共识机制">共识</a>算法。相比于<a href="https://zh.wikipedia.org/wiki/Paxos" title="Paxos">Paxos</a>，Raft的目标是提供更清晰的逻辑分工使得算法本身能被更好地理解，同时它安全性更高，并能提供一些额外的特性。</p>
+<p><a href="https://thesecretlivesofdata.com/raft/">raft原理</a><br><a href="https://raft.github.io/">raft-github</a></p>
+<p>在Raft集群（英语：Raft cluster）里，服务器可能会是这三种身份其中一个：<strong>领袖</strong>（英语：leader）、<strong>追随者</strong>（英语：follower），或是<strong>候选人</strong>（英语：candidate）。在正常情况下只会有一个领袖，其他都是追随者。而领袖会负责所有外部的请求，如果不是领袖的机器收到时，请求会被导到领袖。</p>
+<p>通常领袖会借由固定时间发送消息，也就是“心跳（英语：heartbeat）”，让追随者知道集群的领袖还在运作。而每个追随者都会设计超时机制（英语：timeout），当超过一定时间没有收到心跳（通常是150 ms或300 ms，集群就会进入选举状态。</p>
+<h3 id="领袖选举"><a href="#领袖选举" class="headerlink" title="领袖选举"></a>领袖选举</h3><p>在起始算法或领袖死机、断线的时候，就需要选举出新的领袖。<br>此时集群进入新的任期（英语：term）并开始选举，如果选举成功则新的领袖开始执行工作，反之则视此任期终止，开始新的任期并开始下一场选举。</p>
+<p>选举是由候选人发动的。当领袖的心跳超时的时候，追随者就会把自己的任期编号（英语：term counter）加一、宣告竞选、投自己一票、并向其他服务器拉票。每个服务器在每个任期只会投一票，固定投给最早拉票的服务器。</p>
+<p>如果候选人收到其他候选人的拉票、而且拉票的任期编号不小于自己的任期编号，就会自认落选，成为追随者，并认定来拉票的候选人为领袖。如果有候选人收到过半的选票就当选为新的领袖。如果超时仍没有选出新领袖，此任期自动终止，开始新的任期并开始下一场选举。</p>
+<p>Raft每个服务器的超时期限是随机的，这降低伺服务同时竞选的几率，也降低因两个竞选人得票都不过半而选举失败的几率。</p>
+<h3 id="记录复写"><a href="#记录复写" class="headerlink" title="记录复写"></a>记录复写</h3><p>整个集群有个复写的状态机（英语：state machine），可执行外来的指令。领袖接收指令，将之写入自己记录中的新指令部分，然后把指令转发给追随者。如果有追随者没反应，领袖会不断重发指令、直到每个追随者都成功将新指令写入记录为止。</p>
+<p>当领袖收到过半追随者确认写入的消息，就会把指令视为已存储（英语：committed）。当追随者发现指令状态变成已存储，就会在其状态机上执行该指令。</p>
 ]]></content>
       <categories>
-        <category>测试</category>
+        <category>分布式系统</category>
+        <category>一致性</category>
       </categories>
       <tags>
-        <tag>vegeta</tag>
-        <tag>测试</tag>
+        <tag>算法</tag>
+        <tag>分布式</tag>
       </tags>
   </entry>
   <entry>
@@ -2113,32 +2437,82 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
       </tags>
   </entry>
   <entry>
-    <title>智能指针与内存管理</title>
-    <url>/2022/03/31/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E4%B8%8E%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</url>
-    <content><![CDATA[<p>c++11/17/20新特性学习笔记</p>
+    <title>存储与检索</title>
+    <url>/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/</url>
+    <content><![CDATA[<p>设计数据密集型应用程序，一些常用的存储引擎与索引。</p>
 <span id="more"></span>
 
 <!-- toc -->
-<h2 id="RAII-与引用计数"><a href="#RAII-与引用计数" class="headerlink" title="RAII 与引用计数"></a>RAII 与引用计数</h2><ul>
-<li>什么是RAII？<br><code>RAII</code>是Resource Acquisition Is Initialization（wiki上面翻译成 “资源获取就是初始化”）的简称，是C++语言的一种管理资源、避免泄漏的惯用法。利用的就是C++构造的对象最终会被销毁的原则。RAII的做法是使用一个对象，在其构造时获取对应的资源，在对象生命期内控制对资源的访问，使之始终保持有效，最后在对象析构的时候，释放构造时获取的资源。<br>而 C++11 引入了智能指针的概念，使用了引用计数的想法，让程序 员不再需要关心手动释放内存。这些智能指针就包括 <code>std::shared_ptr</code>/<code>std::unique_ptr</code>/<code>std::weak_ptr</code>， 使用它们需要包含头文件 <memory>。</li>
+
+<h2 id="哈希索引"><a href="#哈希索引" class="headerlink" title="哈希索引"></a>哈希索引</h2><p>键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。<br>那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。</p>
+<p>ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值。</p>
+<p>但是，哈希表索引也有局限性:</p>
+<ul>
+<li><p>散列表必须能放进内存</p>
+<p>  如果你有非常多的键，那真是倒霉。原则上可以在磁盘上保留一个哈希映射，不幸的是 磁盘哈希映射很难表现优秀。它需要大量的随机访问I/O，当它变满时增长是很昂贵的， 并且散列冲突需要很多的逻辑【5】。</p>
+</li>
+<li><p>范围查询效率不高。</p>
+<p>  例如，您无法轻松扫描kitty00000和kitty99999之间的所有键——您 必须在散列映射中单独查找每个键。</p>
+</li>
 </ul>
-<h3 id="std-shared-ptr"><a href="#std-shared-ptr" class="headerlink" title="std::shared_ptr"></a>std::shared_ptr</h3><p>std::shared_ptr 是一种智能指针，它能够记录多少个 shared_ptr 共同指向一个对象，从而消除显示的调用 delete，当引用计数变为零的时候就会将对象自动删除。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 生成shared指针</span></span><br><span class="line"><span class="comment">// 明确只向</span></span><br><span class="line"><span class="keyword">auto</span> p = std::shared_ptr&lt;<span class="keyword">int</span>&gt;(<span class="keyword">new</span> <span class="built_in"><span class="keyword">int</span></span>(<span class="number">1</span>));</span><br><span class="line"><span class="comment">// 使用make_shared初始化</span></span><br><span class="line"><span class="keyword">auto</span> pointer = std::make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//  std::shared_ptr 可以通过 get() 方法来获取原始指针，通过 reset() 来减少一个引用计数，并 通过 use_count() 来查看一个对象的引用计数。</span></span><br><span class="line"><span class="keyword">auto</span> pointer = std::make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>);  </span><br><span class="line"><span class="keyword">auto</span> pointer2 = pointer; <span class="comment">// 引用计数 +1  </span></span><br><span class="line"><span class="keyword">auto</span> pointer3 = pointer; <span class="comment">// 引用计数 +1  </span></span><br><span class="line"><span class="keyword">int</span> *p = pointer.<span class="built_in">get</span>(); <span class="comment">// 这样不会增加引用计数  </span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer.use_count() = &quot;</span> &lt;&lt; pointer.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 3 </span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer2.use_count() = &quot;</span> &lt;&lt; pointer2.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 3</span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer3.use_count() = &quot;</span> &lt;&lt; pointer3.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 3</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//  使用reset来减少</span></span><br><span class="line">pointer2.<span class="built_in">reset</span>();  </span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;reset pointer2:&quot;</span> &lt;&lt; std::endl;  </span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer.use_count() = &quot;</span> &lt;&lt; pointer.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 2</span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer2.use_count() = &quot;</span> &lt;&lt; pointer2.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 0, pointer2 已 reset </span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer3.use_count() = &quot;</span> &lt;&lt; pointer3.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 2</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="std-unique-ptr"><a href="#std-unique-ptr" class="headerlink" title="std::unique_ptr"></a>std::unique_ptr</h3><p>std::unique_ptr 是一种独占的智能指针，它禁止其他智能指针与其共享同一个对象。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">std::unique_ptr&lt;<span class="keyword">int</span>&gt; pointer = std::make_unique&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>); <span class="comment">// make_unique 从 C++14 引入 </span></span><br><span class="line">std::unique_ptr&lt;<span class="keyword">int</span>&gt; pointer2 = pointer; <span class="comment">// 非法</span></span><br></pre></td></tr></table></figure>
-<p>虽然是不可复制的指针，但是可以通过std::move将其转移给其他的unque_ptr</p>
-<h3 id="std-weak-ptr"><a href="#std-weak-ptr" class="headerlink" title="std::weak_ptr"></a>std::weak_ptr</h3><h4 id="std-shared-ptr的循环引用问题"><a href="#std-shared-ptr的循环引用问题" class="headerlink" title="std::shared_ptr的循环引用问题"></a>std::shared_ptr的循环引用问题</h4><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span>;</span> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">B</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span> &#123;</span>  </span><br><span class="line">	std::shared_ptr&lt;B&gt; pointer; </span><br><span class="line">	~<span class="built_in">A</span>() &#123;</span><br><span class="line">		std::cout &lt;&lt; <span class="string">&quot;A 被销毁&quot;</span> &lt;&lt; std::endl; </span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">B</span> &#123;</span></span><br><span class="line">	std::shared_ptr&lt;A&gt; pointer;</span><br><span class="line">	~<span class="built_in">B</span>() &#123; </span><br><span class="line">		std::cout &lt;&lt; <span class="string">&quot;B 被销毁&quot;</span> &lt;&lt; std::endl; </span><br><span class="line">		&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123; </span><br><span class="line">	<span class="keyword">auto</span> a = std::make_shared&lt;A&gt;(); </span><br><span class="line">	<span class="keyword">auto</span> b = std::make_shared&lt;B&gt;(); </span><br><span class="line">	a-&gt;pointer = b;  </span><br><span class="line">	b-&gt;pointer = a;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>运行结果是 A, B 都不会被销毁，这是因为 a,b 内部的 pointer 同时又引用了 a,b，这使得 a,b 的引 用计数均变为了 2，而离开作用域时，a,b 智能指针被析构，却只能造成这块区域的引用计数减一，这样 就导致了 a,b 对象指向的内存区域引用计数不为零，而外部已经没有办法找到这块区域了，也就造成了内存泄露。<br>解决这个问题的办法就是使用弱引用指针 <code>std::weak_ptr</code>, 弱引用不会引起引用计数增加。<br><code>std::weak_ptr</code> 没有 * 运算符和 -&gt; 运算符，所以不能够对资源进行操作，它的唯一作用就是用于 检查 <code>std::shared_ptr </code>是否存在，其 expired() 方法能在资源未被释放时，会返回 false，否则返回 true。</p>
+<h2 id="SSTables（Sorted-String-Table）排序字符串表"><a href="#SSTables（Sorted-String-Table）排序字符串表" class="headerlink" title="SSTables（Sorted String Table）排序字符串表"></a>SSTables（Sorted String Table）排序字符串表</h2><p>SSTable 文件用于 Bigtable 内部数据存储。SSTable 文件是一个排序的、不可变的、持久化的 map 结构，其中 map 的 key-value 都可以是任意字节的字符串。支持使用指定键来查找值，或通过给定键范围遍历所有的 key-value 对。</p>
+<p><img src="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/sstable.png" title="内存索引的sstable"></p>
+<p>工作方式: </p>
+<ul>
+<li>写入时，将其添加到内存中的平衡树数据结构(例如，红黑树)。这个内存树有时被称 为内存表(memtable)</li>
+<li>当内存表大于某个阈值(通常为几兆字节)时，将其作为SSTable文件写入磁盘。当SSTable被写入磁盘时，写入可以继续到一个新的内存表实例。</li>
+<li>为了提供读取请求，<code>首先</code>尝试在内存表中找到关键字，<code>然后</code>在最近的磁盘段中，<code>然后</code>在 下一个较旧的段中找到该关键字。</li>
+<li>有时会在后台运行合并和压缩过程以组合段文件并丢弃覆盖或删除的值。</li>
+</ul>
+<p>这种就是常说的<strong>LSM树</strong>（Log Structured Merge Tree，结构化合并<strong>树</strong>）</p>
+<h2 id="B树"><a href="#B树" class="headerlink" title="B树"></a>B树</h2><p><img src="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/b%E6%A0%91.png" title="b树"></p>
+<p>B树将数据库分解成固定大小的块或页面，传统上大 小为4KB(有时会更大)，每个页面都可以使用地址或位置来标识，这允许一个页面引用另一个页面 —— 类似于指针， 但在磁盘而不是在内存中。<br>一个页面会被指定为B树的根;在索引中查找一个键时，就从这里开始。该页面包含几个键和 对子页面的引用。每个子页面负责一段连续范围的键，引用之间的键，指明了引用子页面的 键范围。</p>
+<p>工作方式:</p>
+<ul>
+<li>如果要更新B树中现有键的值，则搜索包含该键的叶页，更改该页中的值，并将该页写回到磁 盘(对该页的任何引用保持有效) 。</li>
+<li>如果你想添加一个新的键，你需要找到其范围包含新键 的页面，并将其添加到该页面。如果页面中没有足够的可用空间容纳新键，则将其分成两个 半满页面，并更新父页面以解释键范围的新分区</li>
+</ul>
+<h2 id="比较B树和LSM树"><a href="#比较B树和LSM树" class="headerlink" title="比较B树和LSM树"></a>比较B树和LSM树</h2><p>根据经验，通 常LSM树的写入速度更快，而B树的读取速度更快。 LSM树上的读取通常比较慢，因 为它们必须在压缩的不同阶段检查几个不同的数据结构和SSTables。</p>
+<h3 id="LSM树的优点"><a href="#LSM树的优点" class="headerlink" title="LSM树的优点"></a>LSM树的优点</h3><p>b树写数据至少两次: 1. 一次预先写入日志 2. 一次写入树本身（还有可能会分页）即使在该页面中只有几个字节发生了变化，也需要一次编写整个页面的开销。</p>
+<ul>
+<li>写速度突出<ul>
+<li>LSM树通常能够比B树支持更高的写入吞吐量，部分原因是它们有时具有较低的写放大 (尽管这取决于存储引擎配置和工作负载)，部分是因为它们顺序地写入紧凑的SSTable文件 而不是必须覆盖树中的几个页面。顺序写入 比随机写入快得多。</li>
+</ul>
+</li>
+<li>磁盘利用率高<ul>
+<li>LSM树可以被压缩得更好，因此经常比B树在磁盘上产生更小的文件。 B树存储引擎会由于分 割而留下一些未使用的磁盘空间:当页面被拆分或某行不能放入现有页面时，页面中的某些 空间仍未被使用。由于LSM树不是面向页面的，并且定期重写SSTables以去除碎片，所以它 们具有较低的存储开销，特别是当使用平坦压缩时</li>
+</ul>
+</li>
+</ul>
+<h3 id="LSM的缺点"><a href="#LSM的缺点" class="headerlink" title="LSM的缺点"></a>LSM的缺点</h3><ul>
+<li>日志结构存储的缺点是压缩过程有时会干扰正在进行的读写操作。尽管存储引擎尝试逐步执 行压缩而不影响并发访问，但是磁盘资源有限，所以很容易发生请求需要等待而磁盘完成昂 贵的压缩操作。</li>
+<li>压缩的另一个问题出现在高写入吞吐量:磁盘的有限写入带宽需要在初始写入(记录和刷新内存表到磁盘)和在后台运行的压缩线程之间共享。</li>
+<li>如果写入吞吐量很高，并且压缩没有仔细配置，压缩跟不上写入速率。在这种情况下，磁盘 上未合并段的数量不断增加，直到磁盘空间用完，读取速度也会减慢，因为它们需要检查更 多段文件。</li>
+</ul>
+<p>B树的优点：在许多关系数据库中，事务隔离是通过在键范围上使用锁来实现的，在B树索引中，这些 锁可以直接连接到树。（B树的索引只有唯一的一个，而日志结构化存储引擎则可能在不同的段中有相同的副本）</p>
+<h2 id="其他索引"><a href="#其他索引" class="headerlink" title="其他索引"></a>其他索引</h2><h3 id="值存在索引中"><a href="#值存在索引中" class="headerlink" title="值存在索引中"></a>值存在索引中</h3><ul>
+<li>索引中的关键字是查询搜索的内容，但是该值可以是以下两种情况之一:它可以是所讨论的 实际行(文档，顶点)，也可以是对存储在别处的行的引用。行被存储的 地方被称为堆文件(heap file)，并且存储的数据没有特定的顺序。</li>
+<li>将索引行直接存储在索引中。这被称为<code>聚集索引</code>。例如，在MySQL的InnoDB存储引擎中，表的主键 总是一个聚簇索引。</li>
+<li>在<code>聚集索引(clustered index)</code>(在索引中存储所有行数据)和<code>非聚集索引(nonclustered index)</code>(仅在索引中存储对数据的引用)之间的折衷被称为包含列的索引(index with included columns)或<code>覆盖索引(covering index)</code>，其存储表的一部分在索引内。</li>
+</ul>
+<h3 id="多列索引"><a href="#多列索引" class="headerlink" title="多列索引"></a>多列索引</h3><ul>
+<li><code>连接索引(concatenated index)</code>，它通过将一列的值追加到另一 列后面，简单地将多个字段组合成一个键(索引定义中指定了字段的连接顺序)。</li>
+<li><code>多维索引(multi-dimensional index)</code>是一种查询多个列的更一般的方法，这对于地理空间 数据尤为重要。(扩展到R树)</li>
+</ul>
+<h3 id="全文搜索和模糊索引"><a href="#全文搜索和模糊索引" class="headerlink" title="全文搜索和模糊索引"></a>全文搜索和模糊索引</h3><h3 id="事务处理与分析"><a href="#事务处理与分析" class="headerlink" title="事务处理与分析"></a>事务处理与分析</h3><p>即使数据库开始被用于许多不同类型的博客文章，游戏中的动作，地址簿中的联系人等等， 基本访问模式仍然类似于处理业务事务。应用程序通常使用索引通过某个键查找少量记录。 根据用户的输入插入或更新记录。由于这些应用程序是交互式的，因此访问模式被称为在线 事务处理(OLTP, OnLine Transaction Processing)。</p>
+<p>这些查询通常由业务分析师编写，并提供给帮助公司管理层做出更好决策(商业智能)的报 告。为了区分这种使用数据库的事务处理模式，它被称为在线分析处理(OLAP, OnLine Analytice Processing)</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>OLTP系统通常面向用户，这意味着他们可能会看到大量的请求。为了处理负载，应用程 序通常只触及每个查询中的少量记录。应用程序使用某种键来请求记录，存储引擎使用 索引来查找所请求的键的数据。磁盘寻道时间往往是这里的瓶颈。 </li>
+<li>OLAP数据仓库和类似的分析系统不太知名，因为它们主要由业务分析人员使用，而不是由最 终用户使用。它们处理比OLTP系统少得多的查询量，但是每个查询通常要求很高，需要 在短时间内扫描数百万条记录。磁盘带宽(不是查找时间)往往是瓶颈，列式存储是这 种工作负载越来越流行的解决方案。</li>
+</ul>
 ]]></content>
       <categories>
-        <category>语言学习</category>
-        <category>c++</category>
-        <category>现代c++</category>
+        <category>读书笔记</category>
+        <category>设计数据密集型应用程序</category>
       </categories>
       <tags>
-        <tag>c++</tag>
+        <tag>数据库</tag>
+        <tag>存储</tag>
       </tags>
   </entry>
   <entry>
@@ -2175,6 +2549,56 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
       </categories>
       <tags>
         <tag>c++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>智能指针与内存管理</title>
+    <url>/2022/03/31/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E4%B8%8E%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</url>
+    <content><![CDATA[<p>c++11/17/20新特性学习笔记</p>
+<span id="more"></span>
+
+<!-- toc -->
+<h2 id="RAII-与引用计数"><a href="#RAII-与引用计数" class="headerlink" title="RAII 与引用计数"></a>RAII 与引用计数</h2><ul>
+<li>什么是RAII？<br><code>RAII</code>是Resource Acquisition Is Initialization（wiki上面翻译成 “资源获取就是初始化”）的简称，是C++语言的一种管理资源、避免泄漏的惯用法。利用的就是C++构造的对象最终会被销毁的原则。RAII的做法是使用一个对象，在其构造时获取对应的资源，在对象生命期内控制对资源的访问，使之始终保持有效，最后在对象析构的时候，释放构造时获取的资源。<br>而 C++11 引入了智能指针的概念，使用了引用计数的想法，让程序 员不再需要关心手动释放内存。这些智能指针就包括 <code>std::shared_ptr</code>/<code>std::unique_ptr</code>/<code>std::weak_ptr</code>， 使用它们需要包含头文件 <memory>。</li>
+</ul>
+<h3 id="std-shared-ptr"><a href="#std-shared-ptr" class="headerlink" title="std::shared_ptr"></a>std::shared_ptr</h3><p>std::shared_ptr 是一种智能指针，它能够记录多少个 shared_ptr 共同指向一个对象，从而消除显示的调用 delete，当引用计数变为零的时候就会将对象自动删除。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 生成shared指针</span></span><br><span class="line"><span class="comment">// 明确只向</span></span><br><span class="line"><span class="keyword">auto</span> p = std::shared_ptr&lt;<span class="keyword">int</span>&gt;(<span class="keyword">new</span> <span class="built_in"><span class="keyword">int</span></span>(<span class="number">1</span>));</span><br><span class="line"><span class="comment">// 使用make_shared初始化</span></span><br><span class="line"><span class="keyword">auto</span> pointer = std::make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//  std::shared_ptr 可以通过 get() 方法来获取原始指针，通过 reset() 来减少一个引用计数，并 通过 use_count() 来查看一个对象的引用计数。</span></span><br><span class="line"><span class="keyword">auto</span> pointer = std::make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>);  </span><br><span class="line"><span class="keyword">auto</span> pointer2 = pointer; <span class="comment">// 引用计数 +1  </span></span><br><span class="line"><span class="keyword">auto</span> pointer3 = pointer; <span class="comment">// 引用计数 +1  </span></span><br><span class="line"><span class="keyword">int</span> *p = pointer.<span class="built_in">get</span>(); <span class="comment">// 这样不会增加引用计数  </span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer.use_count() = &quot;</span> &lt;&lt; pointer.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 3 </span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer2.use_count() = &quot;</span> &lt;&lt; pointer2.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 3</span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer3.use_count() = &quot;</span> &lt;&lt; pointer3.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 3</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//  使用reset来减少</span></span><br><span class="line">pointer2.<span class="built_in">reset</span>();  </span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;reset pointer2:&quot;</span> &lt;&lt; std::endl;  </span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer.use_count() = &quot;</span> &lt;&lt; pointer.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 2</span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer2.use_count() = &quot;</span> &lt;&lt; pointer2.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 0, pointer2 已 reset </span></span><br><span class="line">std::cout &lt;&lt; <span class="string">&quot;pointer3.use_count() = &quot;</span> &lt;&lt; pointer3.<span class="built_in">use_count</span>() &lt;&lt; std::endl; <span class="comment">// 2</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="std-unique-ptr"><a href="#std-unique-ptr" class="headerlink" title="std::unique_ptr"></a>std::unique_ptr</h3><p>std::unique_ptr 是一种独占的智能指针，它禁止其他智能指针与其共享同一个对象。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">std::unique_ptr&lt;<span class="keyword">int</span>&gt; pointer = std::make_unique&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>); <span class="comment">// make_unique 从 C++14 引入 </span></span><br><span class="line">std::unique_ptr&lt;<span class="keyword">int</span>&gt; pointer2 = pointer; <span class="comment">// 非法</span></span><br></pre></td></tr></table></figure>
+<p>虽然是不可复制的指针，但是可以通过std::move将其转移给其他的unque_ptr</p>
+<h3 id="std-weak-ptr"><a href="#std-weak-ptr" class="headerlink" title="std::weak_ptr"></a>std::weak_ptr</h3><h4 id="std-shared-ptr的循环引用问题"><a href="#std-shared-ptr的循环引用问题" class="headerlink" title="std::shared_ptr的循环引用问题"></a>std::shared_ptr的循环引用问题</h4><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span>;</span> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">B</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span> &#123;</span>  </span><br><span class="line">	std::shared_ptr&lt;B&gt; pointer; </span><br><span class="line">	~<span class="built_in">A</span>() &#123;</span><br><span class="line">		std::cout &lt;&lt; <span class="string">&quot;A 被销毁&quot;</span> &lt;&lt; std::endl; </span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">B</span> &#123;</span></span><br><span class="line">	std::shared_ptr&lt;A&gt; pointer;</span><br><span class="line">	~<span class="built_in">B</span>() &#123; </span><br><span class="line">		std::cout &lt;&lt; <span class="string">&quot;B 被销毁&quot;</span> &lt;&lt; std::endl; </span><br><span class="line">		&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123; </span><br><span class="line">	<span class="keyword">auto</span> a = std::make_shared&lt;A&gt;(); </span><br><span class="line">	<span class="keyword">auto</span> b = std::make_shared&lt;B&gt;(); </span><br><span class="line">	a-&gt;pointer = b;  </span><br><span class="line">	b-&gt;pointer = a;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果是 A, B 都不会被销毁，这是因为 a,b 内部的 pointer 同时又引用了 a,b，这使得 a,b 的引 用计数均变为了 2，而离开作用域时，a,b 智能指针被析构，却只能造成这块区域的引用计数减一，这样 就导致了 a,b 对象指向的内存区域引用计数不为零，而外部已经没有办法找到这块区域了，也就造成了内存泄露。<br>解决这个问题的办法就是使用弱引用指针 <code>std::weak_ptr</code>, 弱引用不会引起引用计数增加。<br><code>std::weak_ptr</code> 没有 * 运算符和 -&gt; 运算符，所以不能够对资源进行操作，它的唯一作用就是用于 检查 <code>std::shared_ptr </code>是否存在，其 expired() 方法能在资源未被释放时，会返回 false，否则返回 true。</p>
+]]></content>
+      <categories>
+        <category>语言学习</category>
+        <category>c++</category>
+        <category>现代c++</category>
+      </categories>
+      <tags>
+        <tag>c++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>前缀树</title>
+    <url>/2022/07/27/%E5%89%8D%E7%BC%80%E6%A0%91/</url>
+    <content><![CDATA[<hr>
+<p>Trie，又称前缀树或字典树，是一棵有根树，其每个节点包含以下字段：</p>
+<p>指向子节点的指针数组 <code>children</code>。对于本题而言，数组长度为 26，即小写英文字母的数量。此时<code>children[0]</code> 对应小写字母 <code>a</code>，<code>children[1]</code> 对应小写字母 b，…，<code>children[25]</code> 对应小写字母 <code>z</code>。<br>布尔字段 <code>isEnd</code>，表示该节点是否为字符串的结尾。</p>
+<span id="more"></span>
+<!-- toc -->
+
+<h2 id="前缀树"><a href="#前缀树" class="headerlink" title="前缀树"></a>前缀树</h2><p><img src="/2022/07/27/%E5%89%8D%E7%BC%80%E6%A0%91/20220727155559.png"></p>
+<h2 id="golang实现"><a href="#golang实现" class="headerlink" title="golang实现"></a>golang实现</h2><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Trie <span class="keyword">struct</span> &#123;  </span><br><span class="line">   <span class="comment">// 26个子节点  </span></span><br><span class="line">   children [<span class="number">26</span>]*Trie  </span><br><span class="line">   <span class="comment">// 是否该节点结尾  </span></span><br><span class="line">   isEnd <span class="keyword">bool</span>  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Constructor</span><span class="params">()</span> <span class="title">Trie</span></span> &#123;  </span><br><span class="line">   <span class="keyword">return</span> Trie&#123;&#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 插入一个单词  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">Insert</span><span class="params">(word <span class="keyword">string</span>)</span></span>  &#123;  </span><br><span class="line">   node := t  </span><br><span class="line">   <span class="keyword">for</span> _, val := <span class="keyword">range</span> word &#123;  </span><br><span class="line">      pos := val - <span class="string">&#x27;a&#x27;</span>  </span><br><span class="line">      <span class="keyword">if</span> node.children[pos] == <span class="literal">nil</span> &#123;  </span><br><span class="line">         node.children[pos] = &amp;Trie&#123;&#125;  </span><br><span class="line">      &#125;  </span><br><span class="line">      node = node.children[pos]  </span><br><span class="line">   &#125;  </span><br><span class="line">   node.isEnd = <span class="literal">true</span>  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查询单词  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">SearchPrefixNode</span><span class="params">(prefix <span class="keyword">string</span>)</span> *<span class="title">Trie</span></span> &#123;  </span><br><span class="line">   node := t  </span><br><span class="line">   <span class="keyword">for</span> _, val := <span class="keyword">range</span> prefix &#123;  </span><br><span class="line">      pos := val - <span class="string">&#x27;a&#x27;</span>  </span><br><span class="line">      <span class="keyword">if</span> node.children[pos] == <span class="literal">nil</span> &#123;  </span><br><span class="line">         <span class="keyword">return</span> <span class="literal">nil</span>  </span><br><span class="line">      &#125;  </span><br><span class="line">      node = node.children[pos]  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> node  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查询是否存在这个单词  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">Search</span><span class="params">(word <span class="keyword">string</span>)</span> <span class="title">bool</span></span> &#123;  </span><br><span class="line">   node := t.SearchPrefixNode(word)  </span><br><span class="line">   <span class="keyword">return</span> node != <span class="literal">nil</span> &amp;&amp; node.isEnd  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查询是否有这个前缀  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">StartsWith</span><span class="params">(prefix <span class="keyword">string</span>)</span> <span class="title">bool</span></span> &#123;  </span><br><span class="line">   <span class="keyword">return</span> t.SearchPrefixNode(prefix) != <span class="literal">nil</span>  </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	myTrie := Constructor()</span><br><span class="line">	myTrie.Insert(<span class="string">&quot;&quot;</span>)</span><br><span class="line">	myTrie.Insert(<span class="string">&quot;affairs&quot;</span>)</span><br><span class="line">	myTrie.Insert(<span class="string">&quot;afraid&quot;</span>)</span><br><span class="line">	fmt.Println(myTrie.Search(<span class="string">&quot;&quot;</span>))        <span class="comment">// true</span></span><br><span class="line">	fmt.Println(myTrie.StartsWith(<span class="string">&quot;af&quot;</span>))  <span class="comment">// true</span></span><br><span class="line">	fmt.Println(myTrie.Search(<span class="string">&quot;affairs&quot;</span>)) <span class="comment">// true</span></span><br><span class="line">	fmt.Println(myTrie.Search(<span class="string">&quot;apple&quot;</span>))   <span class="comment">// false</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>数据结构&amp;算法</category>
+        <category>数据结构</category>
+        <category>前缀树</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+        <tag>算法</tag>
       </tags>
   </entry>
   <entry>
@@ -2363,430 +2787,6 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
       </categories>
       <tags>
         <tag>c++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>golang的list实现</title>
-    <url>/2022/05/24/golang%E7%9A%84list%E5%AE%9E%E7%8E%B0/</url>
-    <content><![CDATA[<p>在leetcode刷题时候，会用到链表的数据结构。在go语言中，链表的实现是有现成的接口的。</p>
-<span id="more"></span>
-
-<!-- toc -->
-
-<p>在Go语言中，列表使用 container/list 包来实现，内部的实现原理是双链表，列表能够高效地进行任意位置的元素插入和删除操作。</p>
-<ul>
-<li><code>container/list</code>包中导入<br>list 包实现了一个双链表（doubly linked list）。<h2 id="Element类型"><a href="#Element类型" class="headerlink" title="Element类型"></a>Element类型</h2>Element 用于代表双链表的元素</li>
-</ul>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Element <span class="keyword">struct</span> &#123;</span><br><span class="line">    next, prev *Element</span><br><span class="line">    list       *List</span><br><span class="line">    <span class="comment">// any 是接口类型</span></span><br><span class="line">    Value      any</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 方法</span></span><br><span class="line"><span class="comment">// Next returns the next list element or nil.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Element)</span> <span class="title">Next</span><span class="params">()</span> *<span class="title">Element</span></span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Element)</span> <span class="title">Prev</span><span class="params">()</span> *<span class="title">Element</span></span></span><br></pre></td></tr></table></figure>
-
-<h2 id="List类型"><a href="#List类型" class="headerlink" title="List类型"></a>List类型</h2><p>List 用于表示双链表。<br>空列表可以用作 List 的零值。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> List <span class="keyword">struct</span> &#123;</span><br><span class="line">    root Element</span><br><span class="line">    <span class="built_in">len</span>  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    l := list.New()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尾部添加, 返回element</span></span><br><span class="line">    e1 := l.PushBack(<span class="string">&quot;canon&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 头部添加</span></span><br><span class="line">    e2 := l.PushFront(<span class="number">67</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尾部添加后保存元素句柄</span></span><br><span class="line">    element := l.PushBack(<span class="string">&quot;fist&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在fist之后添加high</span></span><br><span class="line">    l.InsertAfter(<span class="string">&quot;high&quot;</span>, element)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在fist之前添加noon</span></span><br><span class="line">    l.InsertBefore(<span class="string">&quot;noon&quot;</span>, element)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 移除指定元素, 返回value</span></span><br><span class="line">    l.Remove(element)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ----- 遍历 ------</span></span><br><span class="line">	<span class="keyword">for</span> i := l.Front(); i != <span class="literal">nil</span>; i = i.Next() &#123;</span><br><span class="line">	    fmt.Println(i.Value)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>golang</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>存储与检索</title>
-    <url>/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/</url>
-    <content><![CDATA[<p>设计数据密集型应用程序，一些常用的存储引擎与索引。</p>
-<span id="more"></span>
-
-<!-- toc -->
-
-<h2 id="哈希索引"><a href="#哈希索引" class="headerlink" title="哈希索引"></a>哈希索引</h2><p>键值存储与在大多数编程语言中可以找到的字典(dictionary)类型非常相似，通常字典都是 用散列映射(hash map)(或哈希表(hash table))实现的。<br>那么最简单的索引策 略就是:保留一个内存中的哈希映射，其中每个键都映射到一个数据文件中的字节偏移量， 指明了可以找到对应值的位置。</p>
-<p>ps: 追加写入（追加和分段合并是顺序写入操作，通常比随机写入快得多），而不是删除原先的键值。</p>
-<p>但是，哈希表索引也有局限性:</p>
-<ul>
-<li><p>散列表必须能放进内存</p>
-<p>  如果你有非常多的键，那真是倒霉。原则上可以在磁盘上保留一个哈希映射，不幸的是 磁盘哈希映射很难表现优秀。它需要大量的随机访问I/O，当它变满时增长是很昂贵的， 并且散列冲突需要很多的逻辑【5】。</p>
-</li>
-<li><p>范围查询效率不高。</p>
-<p>  例如，您无法轻松扫描kitty00000和kitty99999之间的所有键——您 必须在散列映射中单独查找每个键。</p>
-</li>
-</ul>
-<h2 id="SSTables（Sorted-String-Table）排序字符串表"><a href="#SSTables（Sorted-String-Table）排序字符串表" class="headerlink" title="SSTables（Sorted String Table）排序字符串表"></a>SSTables（Sorted String Table）排序字符串表</h2><p>SSTable 文件用于 Bigtable 内部数据存储。SSTable 文件是一个排序的、不可变的、持久化的 map 结构，其中 map 的 key-value 都可以是任意字节的字符串。支持使用指定键来查找值，或通过给定键范围遍历所有的 key-value 对。</p>
-<p><img src="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/sstable.png" title="内存索引的sstable"></p>
-<p>工作方式: </p>
-<ul>
-<li>写入时，将其添加到内存中的平衡树数据结构(例如，红黑树)。这个内存树有时被称 为内存表(memtable)</li>
-<li>当内存表大于某个阈值(通常为几兆字节)时，将其作为SSTable文件写入磁盘。当SSTable被写入磁盘时，写入可以继续到一个新的内存表实例。</li>
-<li>为了提供读取请求，<code>首先</code>尝试在内存表中找到关键字，<code>然后</code>在最近的磁盘段中，<code>然后</code>在 下一个较旧的段中找到该关键字。</li>
-<li>有时会在后台运行合并和压缩过程以组合段文件并丢弃覆盖或删除的值。</li>
-</ul>
-<p>这种就是常说的<strong>LSM树</strong>（Log Structured Merge Tree，结构化合并<strong>树</strong>）</p>
-<h2 id="B树"><a href="#B树" class="headerlink" title="B树"></a>B树</h2><p><img src="/2022/06/01/%E5%AD%98%E5%82%A8%E4%B8%8E%E6%A3%80%E7%B4%A2/b%E6%A0%91.png" title="b树"></p>
-<p>B树将数据库分解成固定大小的块或页面，传统上大 小为4KB(有时会更大)，每个页面都可以使用地址或位置来标识，这允许一个页面引用另一个页面 —— 类似于指针， 但在磁盘而不是在内存中。<br>一个页面会被指定为B树的根;在索引中查找一个键时，就从这里开始。该页面包含几个键和 对子页面的引用。每个子页面负责一段连续范围的键，引用之间的键，指明了引用子页面的 键范围。</p>
-<p>工作方式:</p>
-<ul>
-<li>如果要更新B树中现有键的值，则搜索包含该键的叶页，更改该页中的值，并将该页写回到磁 盘(对该页的任何引用保持有效) 。</li>
-<li>如果你想添加一个新的键，你需要找到其范围包含新键 的页面，并将其添加到该页面。如果页面中没有足够的可用空间容纳新键，则将其分成两个 半满页面，并更新父页面以解释键范围的新分区</li>
-</ul>
-<h2 id="比较B树和LSM树"><a href="#比较B树和LSM树" class="headerlink" title="比较B树和LSM树"></a>比较B树和LSM树</h2><p>根据经验，通 常LSM树的写入速度更快，而B树的读取速度更快。 LSM树上的读取通常比较慢，因 为它们必须在压缩的不同阶段检查几个不同的数据结构和SSTables。</p>
-<h3 id="LSM树的优点"><a href="#LSM树的优点" class="headerlink" title="LSM树的优点"></a>LSM树的优点</h3><p>b树写数据至少两次: 1. 一次预先写入日志 2. 一次写入树本身（还有可能会分页）即使在该页面中只有几个字节发生了变化，也需要一次编写整个页面的开销。</p>
-<ul>
-<li>写速度突出<ul>
-<li>LSM树通常能够比B树支持更高的写入吞吐量，部分原因是它们有时具有较低的写放大 (尽管这取决于存储引擎配置和工作负载)，部分是因为它们顺序地写入紧凑的SSTable文件 而不是必须覆盖树中的几个页面。顺序写入 比随机写入快得多。</li>
-</ul>
-</li>
-<li>磁盘利用率高<ul>
-<li>LSM树可以被压缩得更好，因此经常比B树在磁盘上产生更小的文件。 B树存储引擎会由于分 割而留下一些未使用的磁盘空间:当页面被拆分或某行不能放入现有页面时，页面中的某些 空间仍未被使用。由于LSM树不是面向页面的，并且定期重写SSTables以去除碎片，所以它 们具有较低的存储开销，特别是当使用平坦压缩时</li>
-</ul>
-</li>
-</ul>
-<h3 id="LSM的缺点"><a href="#LSM的缺点" class="headerlink" title="LSM的缺点"></a>LSM的缺点</h3><ul>
-<li>日志结构存储的缺点是压缩过程有时会干扰正在进行的读写操作。尽管存储引擎尝试逐步执 行压缩而不影响并发访问，但是磁盘资源有限，所以很容易发生请求需要等待而磁盘完成昂 贵的压缩操作。</li>
-<li>压缩的另一个问题出现在高写入吞吐量:磁盘的有限写入带宽需要在初始写入(记录和刷新内存表到磁盘)和在后台运行的压缩线程之间共享。</li>
-<li>如果写入吞吐量很高，并且压缩没有仔细配置，压缩跟不上写入速率。在这种情况下，磁盘 上未合并段的数量不断增加，直到磁盘空间用完，读取速度也会减慢，因为它们需要检查更 多段文件。</li>
-</ul>
-<p>B树的优点：在许多关系数据库中，事务隔离是通过在键范围上使用锁来实现的，在B树索引中，这些 锁可以直接连接到树。（B树的索引只有唯一的一个，而日志结构化存储引擎则可能在不同的段中有相同的副本）</p>
-<h2 id="其他索引"><a href="#其他索引" class="headerlink" title="其他索引"></a>其他索引</h2><h3 id="值存在索引中"><a href="#值存在索引中" class="headerlink" title="值存在索引中"></a>值存在索引中</h3><ul>
-<li>索引中的关键字是查询搜索的内容，但是该值可以是以下两种情况之一:它可以是所讨论的 实际行(文档，顶点)，也可以是对存储在别处的行的引用。行被存储的 地方被称为堆文件(heap file)，并且存储的数据没有特定的顺序。</li>
-<li>将索引行直接存储在索引中。这被称为<code>聚集索引</code>。例如，在MySQL的InnoDB存储引擎中，表的主键 总是一个聚簇索引。</li>
-<li>在<code>聚集索引(clustered index)</code>(在索引中存储所有行数据)和<code>非聚集索引(nonclustered index)</code>(仅在索引中存储对数据的引用)之间的折衷被称为包含列的索引(index with included columns)或<code>覆盖索引(covering index)</code>，其存储表的一部分在索引内。</li>
-</ul>
-<h3 id="多列索引"><a href="#多列索引" class="headerlink" title="多列索引"></a>多列索引</h3><ul>
-<li><code>连接索引(concatenated index)</code>，它通过将一列的值追加到另一 列后面，简单地将多个字段组合成一个键(索引定义中指定了字段的连接顺序)。</li>
-<li><code>多维索引(multi-dimensional index)</code>是一种查询多个列的更一般的方法，这对于地理空间 数据尤为重要。(扩展到R树)</li>
-</ul>
-<h3 id="全文搜索和模糊索引"><a href="#全文搜索和模糊索引" class="headerlink" title="全文搜索和模糊索引"></a>全文搜索和模糊索引</h3><h3 id="事务处理与分析"><a href="#事务处理与分析" class="headerlink" title="事务处理与分析"></a>事务处理与分析</h3><p>即使数据库开始被用于许多不同类型的博客文章，游戏中的动作，地址簿中的联系人等等， 基本访问模式仍然类似于处理业务事务。应用程序通常使用索引通过某个键查找少量记录。 根据用户的输入插入或更新记录。由于这些应用程序是交互式的，因此访问模式被称为在线 事务处理(OLTP, OnLine Transaction Processing)。</p>
-<p>这些查询通常由业务分析师编写，并提供给帮助公司管理层做出更好决策(商业智能)的报 告。为了区分这种使用数据库的事务处理模式，它被称为在线分析处理(OLAP, OnLine Analytice Processing)</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
-<li>OLTP系统通常面向用户，这意味着他们可能会看到大量的请求。为了处理负载，应用程 序通常只触及每个查询中的少量记录。应用程序使用某种键来请求记录，存储引擎使用 索引来查找所请求的键的数据。磁盘寻道时间往往是这里的瓶颈。 </li>
-<li>OLAP数据仓库和类似的分析系统不太知名，因为它们主要由业务分析人员使用，而不是由最 终用户使用。它们处理比OLTP系统少得多的查询量，但是每个查询通常要求很高，需要 在短时间内扫描数百万条记录。磁盘带宽(不是查找时间)往往是瓶颈，列式存储是这 种工作负载越来越流行的解决方案。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>读书笔记</category>
-        <category>设计数据密集型应用程序</category>
-      </categories>
-      <tags>
-        <tag>数据库</tag>
-        <tag>存储</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>go的切片和指针</title>
-    <url>/2022/06/17/go%E7%9A%84%E5%88%87%E7%89%87%E5%92%8C%E6%8C%87%E9%92%88/</url>
-    <content><![CDATA[<hr>
-<p>切片本身并不是动态数组或者数组指针。它内部实现的数据结构通过指针引用底层数组，设定相关属性将数据读写操作限定在指定的区域内。<strong>切片本身是一个只读对象，其工作机制类似数组指针的一种封装</strong>。</p>
-<span id="more"></span>
-<!-- toc -->
-
-<p>[toc]</p>
-<p><a href="https://halfrost.com/go_slice/">参考文章</a></p>
-<h2 id="go语言指针"><a href="#go语言指针" class="headerlink" title="go语言指针"></a>go语言指针</h2><p>Go中的指针及与指针对指针的操作主要有以下三种：</p>
-<ul>
-<li><p>一普通的指针类型，例如 var intptr *T，定义一个T类型指针变量。</p>
-</li>
-<li><p>二内置类型uintptr，本质是一个无符号的整型，它的长度是跟平台相关的，它的长度可以用来保存一个指针地址。</p>
-</li>
-<li><p>三是unsafe包提供的Pointer，表示可以指向任意类型的指针。</p>
-</li>
-</ul>
-<h3 id="普通指针"><a href="#普通指针" class="headerlink" title="普通指针"></a>普通指针</h3><p>通过引用来修改值</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">count := <span class="number">1</span></span><br><span class="line">Counter(&amp;count)</span><br><span class="line">fmt.Println(count)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Counter</span><span class="params">(count *<span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">    *count++</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="uintptr"><a href="#uintptr" class="headerlink" title="uintptr"></a>uintptr</h3><p>uintptr用来进行指针计算，因为它是整型，所以很容易计算出下一个指针所指向的位置。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// uintptr is an integer type that is large enough to hold the bit pattern of  </span></span><br><span class="line"><span class="comment">// any pointer. </span></span><br><span class="line"><span class="keyword">type</span> <span class="keyword">uintptr</span> <span class="keyword">uintptr</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// eg:</span></span><br><span class="line">n := <span class="number">10</span></span><br><span class="line"></span><br><span class="line">b := <span class="built_in">make</span>([]<span class="keyword">int</span>, n)</span><br><span class="line"><span class="keyword">for</span> i:= <span class="number">0</span>;i&lt; n;i++ &#123;</span><br><span class="line">    b[i] = i</span><br><span class="line">&#125;</span><br><span class="line">fmt.Println(b)</span><br><span class="line"><span class="comment">// [0 1 2 3 4 5 6 7 8 9]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 取slice的最后的一个元素 做offset位移</span></span><br><span class="line">end := unsafe.Pointer(<span class="keyword">uintptr</span>(unsafe.Pointer(&amp;b[<span class="number">0</span>])) + <span class="number">9</span> * unsafe.Sizeof(b[<span class="number">0</span>]))</span><br><span class="line"><span class="comment">// 等价于unsafe.Pointer(&amp;b[9])</span></span><br><span class="line">fmt.Println(*(*<span class="keyword">int</span>)(end))</span><br><span class="line"><span class="comment">// 9</span></span><br></pre></td></tr></table></figure>
-
-<p>注意：虽然uintpr保存了一个指针地址，但它只是一个值，不引用任何对象。</p>
-<ul>
-<li>如果uintptr地址相关联对象移动，则其值也不会更新。例如goroutine的堆栈信息发生变化</li>
-<li>uintptr地址关联的对象可以被垃圾回收。GC不认为uintptr是活引用，<strong>因此unitptr地址指向的对象可以被垃圾收集。</strong></li>
-</ul>
-<p>一个uintptr可以被转换成unsafe.Pointer,同时unsafe.Pointer也可以被转换为uintptr。可以使用使用uintptr + offset计算出地址，然后使用unsafe.Pointer进行转换，格式如下：<code>p = unsafe.Pointer(uintptr(p) + offset)</code></p>
-<p><strong>总结</strong>：<em><strong>uintptr</strong></em>指针用来做数学运算</p>
-<h3 id="unsafe-Pointer"><a href="#unsafe-Pointer" class="headerlink" title="unsafe.Pointer"></a>unsafe.Pointer</h3><p>unsafe.Pointer是特别定义的一种指针类型,它可以包含任意类型变量的地址。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ArbitraryType is here for the purposes of documentation only and is not actually</span></span><br><span class="line"><span class="comment">// part of the unsafe package. It represents the type of an arbitrary Go expression.</span></span><br><span class="line"><span class="comment">// ArbitraryType在这里不是unsafe包的实际的一部分，仅仅是为了文档记录</span></span><br><span class="line"><span class="keyword">type</span> ArbitraryType <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Pointer *ArbitraryType</span><br><span class="line"></span><br><span class="line"><span class="comment">// 官方文档</span></span><br><span class="line">Pointer represents a pointer to an arbitrary <span class="keyword">type</span>. There are four special operations</span><br><span class="line">available <span class="keyword">for</span> <span class="keyword">type</span> Pointer that are not available <span class="keyword">for</span> other types:    <span class="comment">//  Pointer代表了一个任意类型的指针。Pointer类型有四种特殊的操作是其他类型不能使用的:</span></span><br><span class="line">   - A pointer value of any <span class="keyword">type</span> can be converted to a Pointer.       <span class="comment">//  任意类型的指针可以被转换为Pointer</span></span><br><span class="line">   - A Pointer can be converted to a pointer value of any <span class="keyword">type</span>.       <span class="comment">//  Pointer可以被转换为任务类型的值的指针</span></span><br><span class="line">   - A <span class="keyword">uintptr</span> can be converted to a Pointer.                         <span class="comment">//  uintptr可以被转换为Pointer</span></span><br><span class="line">   - A Pointer can be converted to a <span class="keyword">uintptr</span>.                         <span class="comment">//  Pointer可以被转换为uintptr</span></span><br><span class="line">Pointer therefore allows a program to defeat the <span class="keyword">type</span> system and read and write</span><br><span class="line">arbitrary memory. It should be used with extreme care.                <span class="comment">//  因此Pointer允许程序不按类型系统的要求来读写任意的内存，应该非常小心地使用它。</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>总结</strong>：所以<code>unsafe.Pointer</code>做的主要是用来进行桥接，用于不同类型的指针进行互相转换。</p>
-<h3 id="unsafe-Pointer-uintptr与普通指针的互相转换"><a href="#unsafe-Pointer-uintptr与普通指针的互相转换" class="headerlink" title="unsafe.Pointer,uintptr与普通指针的互相转换"></a>unsafe.Pointer,uintptr与普通指针的互相转换</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> f <span class="keyword">float64</span> = <span class="number">1.0</span></span><br><span class="line">fmt.Println(Float64bits(f))</span><br><span class="line"><span class="comment">// 4607182418800017408</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Float64bits</span><span class="params">(f <span class="keyword">float64</span>)</span> <span class="title">uint64</span></span> &#123;</span><br><span class="line">	<span class="comment">// (*uint64*) 转换成uint64指针 在*号取值</span></span><br><span class="line">    <span class="keyword">return</span> *((*<span class="keyword">uint64</span>)(unsafe.Pointer(&amp;f)))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="go中常用的常量"><a href="#go中常用的常量" class="headerlink" title="go中常用的常量"></a>go中常用的常量</h2><ul>
-<li><strong>^uintptr(0)</strong>:<ul>
-<li>math.MaxUint64</li>
-<li>2 的 64 次方减 1</li>
-</ul>
-</li>
-<li><strong>maxAlloc</strong>:<ul>
-<li><strong>允许用户分配的最大虚拟内存空间</strong>。在 64 位，理论上可分配最大 <code>1 &lt;&lt; heapAddrBits</code> 字节。在 32 位，最大可分配小于 <code>1 &lt;&lt; 32</code> 字节</li>
-</ul>
-</li>
-</ul>
-<h2 id="slice源码阅读"><a href="#slice源码阅读" class="headerlink" title="slice源码阅读"></a><strong>slice</strong>源码阅读</h2><ul>
-<li>slice数据结构</li>
-</ul>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> slice <span class="keyword">struct</span> &#123;  </span><br><span class="line"> <span class="comment">// Pointer 是指向一个数组的指针</span></span><br><span class="line"> array unsafe.Pointer  </span><br><span class="line"> <span class="comment">// len 代表当前切片的长度</span></span><br><span class="line"> <span class="built_in">len</span>   <span class="keyword">int</span>  </span><br><span class="line"> <span class="comment">// cap 是当前切片的容量</span></span><br><span class="line"> <span class="built_in">cap</span>   <span class="keyword">int</span>  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="创建切片"><a href="#创建切片" class="headerlink" title="创建切片"></a>创建切片</h3><p>make 函数允许在运行期动态指定数组长度，绕开了数组类型必须使用编译期常量的限制。</p>
-<p>创建切片有两种形式，make 创建切片，空切片。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 该函数传入需要初始化的切片的类型，长度以及容量，返回的指针会通过调用方组建成一个完成的slice结构体</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">makeslice</span><span class="params">(et *_type, <span class="built_in">len</span>, <span class="built_in">cap</span> <span class="keyword">int</span>)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</span><br><span class="line"><span class="comment">// 判断类型，和容量的乘积会不会超过可分配内存的大小，以及长度是否为0和容量是否小于长度</span></span><br><span class="line"> mem, overflow := math.MulUintptr(et.size, <span class="keyword">uintptr</span>(<span class="built_in">cap</span>))  </span><br><span class="line"> <span class="keyword">if</span> overflow || mem &gt; maxAlloc || <span class="built_in">len</span> &lt; <span class="number">0</span> || <span class="built_in">len</span> &gt; <span class="built_in">cap</span> &#123;  </span><br><span class="line">  <span class="comment">// <span class="doctag">NOTE:</span> Produce a &#x27;len out of range&#x27; error instead of a  </span></span><br><span class="line">  <span class="comment">// &#x27;cap out of range&#x27; error when someone does make([]T, bignumber).  // &#x27;cap out of range&#x27; is true too, but since the cap is only being  // supplied implicitly, saying len is clearer.  // See golang.org/issue/4085.  mem, overflow := math.MulUintptr(et.size, uintptr(len))  </span></span><br><span class="line">  <span class="keyword">if</span> overflow || mem &gt; maxAlloc || <span class="built_in">len</span> &lt; <span class="number">0</span> &#123;  </span><br><span class="line">   panicmakeslicelen()  </span><br><span class="line">  &#125;  </span><br><span class="line">  panicmakeslicecap()  </span><br><span class="line"> &#125;  </span><br><span class="line">  <span class="comment">// 如果都正常，则调用此函数申请返回一个连续 切片中元素大小×切片容量 长度的内存空间的指针</span></span><br><span class="line"> <span class="keyword">return</span> mallocgc(mem, et, <span class="literal">true</span>)  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="nil和空切片"><a href="#nil和空切片" class="headerlink" title="nil和空切片"></a>nil和空切片</h3><p>空切片和 nil 切片的区别在于，空切片指向的地址不是nil，指向的是一个内存地址，但是它没有分配任何内存空间，即底层元素包含0个元素。</p>
-<h3 id="切片的扩容"><a href="#切片的扩容" class="headerlink" title="切片的扩容"></a>切片的扩容</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">growslice</span><span class="params">(et *_type, old slice, <span class="built_in">cap</span> <span class="keyword">int</span>)</span> <span class="title">slice</span></span> &#123;</span><br><span class="line">	<span class="comment">// 如果需求的容量小于就容量则报错</span></span><br><span class="line">  <span class="comment">// 理论上来讲不应该出现这个问题</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">cap</span> &lt; old.<span class="built_in">cap</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(errorString(<span class="string">&quot;growslice: cap out of range&quot;</span>))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// append 没法创建一个nil指针的但是len不为0的切片</span></span><br><span class="line">	<span class="keyword">if</span> et.size == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> slice&#123;unsafe.Pointer(&amp;zerobase), old.<span class="built_in">len</span>, <span class="built_in">cap</span>&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	newcap := old.<span class="built_in">cap</span></span><br><span class="line">	doublecap := newcap + newcap</span><br><span class="line">  <span class="comment">// 如果需求容量大于双倍的旧容量那就直接使用需求容量</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">cap</span> &gt; doublecap &#123;</span><br><span class="line">		newcap = <span class="built_in">cap</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 如果当前len小于1024则容量直接翻倍，否则按照1.25倍去递增直到满足需求容量</span></span><br><span class="line">		<span class="keyword">if</span> old.<span class="built_in">len</span> &lt; <span class="number">1024</span> &#123;</span><br><span class="line">			newcap = doublecap</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> <span class="number">0</span> &lt; newcap &amp;&amp; newcap &lt; <span class="built_in">cap</span> &#123;</span><br><span class="line">				newcap += newcap / <span class="number">4</span></span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> newcap &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				newcap = <span class="built_in">cap</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> overflow <span class="keyword">bool</span></span><br><span class="line">	<span class="keyword">var</span> lenmem, newlenmem, capmem <span class="keyword">uintptr</span></span><br><span class="line"><span class="comment">// 在扩容时不能单单按照len来判断扩容所需要的内存长度</span></span><br><span class="line"><span class="comment">// 还要根据切片的元素类型去进行内存对齐</span></span><br><span class="line"><span class="comment">// 当元素的占用字节数为1，8 或者2的倍数时会进行内存对对齐</span></span><br><span class="line"><span class="comment">// 内存对齐策略按照向上取整方式进行</span></span><br><span class="line"><span class="comment">// 取整的目标时go内存分配策略中67个class分页中的大小进行取整</span></span><br><span class="line">	<span class="keyword">switch</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> et.size == <span class="number">1</span>:</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>)</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>)</span><br><span class="line">		capmem = roundupsize(<span class="keyword">uintptr</span>(newcap))</span><br><span class="line">		overflow = <span class="keyword">uintptr</span>(newcap) &gt; maxAlloc</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem)</span><br><span class="line">	<span class="keyword">case</span> et.size == sys.PtrSize:</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>) * sys.PtrSize</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>) * sys.PtrSize</span><br><span class="line">		capmem = roundupsize(<span class="keyword">uintptr</span>(newcap) * sys.PtrSize)</span><br><span class="line">		overflow = <span class="keyword">uintptr</span>(newcap) &gt; maxAlloc/sys.PtrSize</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem / sys.PtrSize)</span><br><span class="line">	<span class="keyword">case</span> isPowerOfTwo(et.size):</span><br><span class="line">		<span class="keyword">var</span> shift <span class="keyword">uintptr</span></span><br><span class="line">		<span class="keyword">if</span> sys.PtrSize == <span class="number">8</span> &#123;</span><br><span class="line">			<span class="comment">// Mask shift for better code generation.</span></span><br><span class="line">			shift = <span class="keyword">uintptr</span>(sys.Ctz64(<span class="keyword">uint64</span>(et.size))) &amp; <span class="number">63</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			shift = <span class="keyword">uintptr</span>(sys.Ctz32(<span class="keyword">uint32</span>(et.size))) &amp; <span class="number">31</span></span><br><span class="line">		&#125;</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>) &lt;&lt; shift</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>) &lt;&lt; shift</span><br><span class="line">		capmem = roundupsize(<span class="keyword">uintptr</span>(newcap) &lt;&lt; shift)</span><br><span class="line">		overflow = <span class="keyword">uintptr</span>(newcap) &gt; (maxAlloc &gt;&gt; shift)</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem &gt;&gt; shift)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		lenmem = <span class="keyword">uintptr</span>(old.<span class="built_in">len</span>) * et.size</span><br><span class="line">		newlenmem = <span class="keyword">uintptr</span>(<span class="built_in">cap</span>) * et.size</span><br><span class="line">		capmem, overflow = math.MulUintptr(et.size, <span class="keyword">uintptr</span>(newcap))</span><br><span class="line">		capmem = roundupsize(capmem)</span><br><span class="line">		newcap = <span class="keyword">int</span>(capmem / et.size)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 如果所需要的内存超过了最大可分配内存则panic</span></span><br><span class="line">	<span class="keyword">if</span> overflow || capmem &gt; maxAlloc &#123;</span><br><span class="line">		<span class="built_in">panic</span>(errorString(<span class="string">&quot;growslice: cap out of range&quot;</span>))</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> p unsafe.Pointer</span><br><span class="line">  <span class="comment">// 如果当前元素类型不是指针，则会将超出切片当前长度的位置清空</span></span><br><span class="line">  <span class="comment">// 并在最后使用 将原数组内存中的内容拷贝到新申请的内存中。</span></span><br><span class="line">	<span class="keyword">if</span> et.ptrdata == <span class="number">0</span> &#123;</span><br><span class="line">		p = mallocgc(capmem, <span class="literal">nil</span>, <span class="literal">false</span>)</span><br><span class="line">		memclrNoHeapPointers(add(p, newlenmem), capmem-newlenmem)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 如果是指针会根据进行gc方面对其进行加以保护以免空指针在分配期间被gc回收</span></span><br><span class="line">		p = mallocgc(capmem, et, <span class="literal">true</span>)</span><br><span class="line">		<span class="keyword">if</span> lenmem &gt; <span class="number">0</span> &amp;&amp; writeBarrier.enabled &#123;</span><br><span class="line">			bulkBarrierPreWriteSrcOnly(<span class="keyword">uintptr</span>(p), <span class="keyword">uintptr</span>(old.array), lenmem-et.size+et.ptrdata)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	memmove(p, old.array, lenmem)</span><br><span class="line">	<span class="comment">//该函数最终会返回一个新的切片</span></span><br><span class="line">	<span class="keyword">return</span> slice&#123;p, old.<span class="built_in">len</span>, newcap&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Go 中切片扩容的策略是这样的：</p>
-<ul>
-<li>  首先判断，如果新申请容量（cap）大于2倍的旧容量（old.cap），最终容量（newcap）就是新申请的容量（cap）</li>
-<li>  否则判断，如果旧切片的长度小于1024，则最终容量(newcap)就是旧容量(old.cap)的两倍，即（newcap=doublecap）</li>
-<li>  否则判断，如果旧切片长度大于等于1024，则最终容量（newcap）从旧容量（old.cap）开始循环增加原来的 1/4，即（newcap=old.cap,for {newcap += newcap/4}）直到最终容量（newcap）大于等于新申请的容量(cap)，即（newcap &gt;= cap）</li>
-<li>  如果最终容量（cap）计算值溢出，则最终容量（cap）就是新申请容量（cap）</li>
-</ul>
-<p><del>如果切片的容量小于 1024 个元素，于是扩容的时候就翻倍增加容量。上面那个例子也验证了这一情况，总容量从原来的4个翻倍到现在的8个。</del></p>
-<p><del>一旦元素个数超过 1024 个元素，那么增长因子就变成 1.25 ，即每次增加原来容量的四分之一。</del></p>
-<p><strong>注意：扩容扩大的容量都是针对原来的容量而言的，而不是针对原来数组的长度而言的。</strong></p>
-<p>这种情况，由于原数组还有容量可以扩容，所以执行 append() 操作以后，会在原数组上直接操作，所以这种情况下，扩容以后的数组还是指向原来的数组。</p>
-<h3 id="切片的拷贝"><a href="#切片的拷贝" class="headerlink" title="切片的拷贝"></a>切片的拷贝</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">slicecopy</span><span class="params">(toPtr unsafe.Pointer, toLen <span class="keyword">int</span>, fmPtr unsafe.Pointer, fmLen <span class="keyword">int</span>, width <span class="keyword">uintptr</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> fmLen == <span class="number">0</span> || toLen == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	n := fmLen</span><br><span class="line">	<span class="keyword">if</span> toLen &lt; n &#123;</span><br><span class="line">		n = toLen</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> width == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> n</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	size := <span class="keyword">uintptr</span>(n) * width</span><br><span class="line">	<span class="keyword">if</span> size == <span class="number">1</span> &#123;  </span><br><span class="line">    <span class="comment">// 如果就1个元素 直接赋值过去就好了</span></span><br><span class="line">		*(*<span class="keyword">byte</span>)(toPtr) = *(*<span class="keyword">byte</span>)(fmPtr)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 直接进行内存的拷贝，如果slice数据量过大将会影响性能</span></span><br><span class="line">		memmove(toPtr, fmPtr, size)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> n</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="切片的深拷贝和浅拷贝"><a href="#切片的深拷贝和浅拷贝" class="headerlink" title="切片的深拷贝和浅拷贝"></a>切片的深拷贝和浅拷贝</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 浅拷贝</span></span><br><span class="line">slice1 := []<span class="keyword">int</span>&#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125; </span><br><span class="line">slice2 := slice1 </span><br><span class="line">fmt.Println(slice1) </span><br><span class="line">fmt.Println(slice2)</span><br><span class="line"><span class="comment">//同时改变两个数组 </span></span><br><span class="line">slice1[<span class="number">1</span>]=<span class="number">100</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 深拷贝</span></span><br><span class="line">slice1 := []<span class="keyword">int</span>&#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125;</span><br><span class="line">slice2 := <span class="built_in">make</span>([]<span class="keyword">int</span>,<span class="number">5</span>,<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">copy</span>(slice2,slice1)</span><br><span class="line">fmt.Println(slice1)</span><br><span class="line">fmt.Println(slice2)</span><br><span class="line">slice1[<span class="number">1</span>]=<span class="number">100</span>  <span class="comment">//只会影响slice1</span></span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><strong>copy函数</strong><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// The copy built-in function copies elements from a source slice into a  </span></span><br><span class="line"><span class="comment">// destination slice. (As a special case, it also will copy bytes from a  </span></span><br><span class="line"><span class="comment">// string to a slice of bytes.) The source and destination may overlap. Copy  </span></span><br><span class="line"><span class="comment">// returns the number of elements copied, which will be the minimum of  </span></span><br><span class="line"><span class="comment">// len(src) and len(dst).  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">copy</span><span class="params">(dst, src []Type)</span> <span class="title">int</span></span></span><br><span class="line"><span class="comment">// ## 切片 dst 需要先初始化长度</span></span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="comment">// ## 源切片中元素类型为引用类型时，拷贝的是引用</span></span><br></pre></td></tr></table></figure></li>
-<li>  如果 dst 长度小于 src 的长度，则 copy 部分；</li>
-<li>  如果大于，则全部拷贝过来，只是没占满 dst 的坑位而已；</li>
-<li>  相等时刚好不多不少 copy 过来。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>语言学习</category>
-        <category>golang</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>源码阅读</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>golang并查集</title>
-    <url>/2022/07/27/golang%E5%B9%B6%E6%9F%A5%E9%9B%86/</url>
-    <content><![CDATA[<hr>
-<p>并查集被很多OIer认为是最简洁而优雅的数据结构之一，主要用于解决一些<strong>元素分组</strong>的问题。它管理一系列<strong>不相交的集合</strong>，并支持两种操作：</p>
-<ul>
-<li>  <strong>合并</strong>（Union）：把两个不相交的集合合并为一个集合。</li>
-<li>  <strong>查询</strong>（Find）：查询两个元素是否在同一个集合中。<br><a href="https://zhuanlan.zhihu.com/p/93647900">并查集-知乎</a></li>
-</ul>
-<span id="more"></span>
-<!-- toc -->
-<h2 id="并查集简介"><a href="#并查集简介" class="headerlink" title="并查集简介"></a>并查集简介</h2><p><strong>参考文章</strong></p>
-<p>当然，这样的定义未免太过学术化，看完后恐怕不太能理解它具体有什么用。所以我们先来看看并查集最直接的一个应用场景：<strong>亲戚问题</strong>。</p>
-<p>这是一个<strong>树</strong>状的结构，要寻找集合的代表元素，只需要一层一层往上访问<strong>父节点</strong>（图中箭头所指的圆），直达树的<strong>根节点</strong>（图中橙色的圆）即可。根节点的父节点是它自己。</p>
-<p><img src="/2022/07/27/golang%E5%B9%B6%E6%9F%A5%E9%9B%86/20220726164121.png" alt="并查集结构"></p>
-<h2 id="并查集golang实现"><a href="#并查集golang实现" class="headerlink" title="并查集golang实现"></a>并查集golang实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">输入:</span><br><span class="line">关系</span><br><span class="line">[2,3],[1,3],[4,2]</span><br><span class="line">输出：</span><br><span class="line">1（1组关系）</span><br></pre></td></tr></table></figure>
-
-<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> main  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;fmt&quot;</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//leetcode submit region begin(Prohibit modification and deletion)  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">numIslands</span><span class="params">(grid [][]<span class="keyword">byte</span>)</span> <span class="title">int</span></span> &#123;  </span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//leetcode submit region end(Prohibit modification and deletion)  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">type</span> DisjointSet <span class="keyword">struct</span> &#123;  </span><br><span class="line">   fa     []<span class="keyword">int</span> <span class="comment">// 每个节点的父节点, 初始化成功时为自己  </span></span><br><span class="line">   height []<span class="keyword">int</span> <span class="comment">// 该节点的高度  </span></span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 初始化  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">init</span><span class="params">(n <span class="keyword">int</span>)</span></span> &#123;  </span><br><span class="line">   d.fa = <span class="built_in">make</span>([]<span class="keyword">int</span>, n+<span class="number">1</span>)  </span><br><span class="line">   d.height = <span class="built_in">make</span>([]<span class="keyword">int</span>, n+<span class="number">1</span>)  </span><br><span class="line">   <span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= n; i++ &#123;  </span><br><span class="line">      d.fa[i] = i <span class="comment">// 表示自己为一个集合  </span></span><br><span class="line">      d.height[i] = <span class="number">1</span>  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查找父节点  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">find</span><span class="params">(i <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;  </span><br><span class="line">   <span class="comment">// 父节点是自己则代表找到  </span></span><br><span class="line">   <span class="keyword">if</span> i == d.fa[i] &#123;  </span><br><span class="line">      <span class="keyword">return</span> i  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="comment">// 递归查找  </span></span><br><span class="line">   d.fa[i] = d.find(d.fa[i])  </span><br><span class="line">   <span class="comment">// 优化路径(降低树的高度)  </span></span><br><span class="line">   <span class="keyword">return</span> d.fa[i]  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 合并两个集合  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">merge</span><span class="params">(i, j <span class="keyword">int</span>)</span></span> &#123;  </span><br><span class="line">   <span class="comment">// 这里有个优化, 谁合并谁, 矮的往高合并  </span></span><br><span class="line">   f1, f2 := d.find(i), d.find(j)  </span><br><span class="line">   h1, h2 := d.height[f1], d.height[f2]  </span><br><span class="line">   <span class="keyword">if</span> h1 &lt; h2 &#123;  </span><br><span class="line">      d.fa[f1] = f2  </span><br><span class="line">   &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">      d.fa[f2] = f1  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">if</span> h1 == h2 &amp;&amp; f1 != f2 &#123;  </span><br><span class="line">      d.height[f1]++  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 计算集合个数  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *DisjointSet)</span> <span class="title">count</span><span class="params">()</span> <span class="params">(res <span class="keyword">int</span>)</span></span> &#123;  </span><br><span class="line">   <span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="built_in">len</span>(d.fa); i++ &#123;  </span><br><span class="line">      <span class="keyword">if</span> d.fa[i] == i &#123;  </span><br><span class="line">         res++  </span><br><span class="line">      &#125;  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> res  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;  </span><br><span class="line">   parent := <span class="built_in">new</span>(DisjointSet)  </span><br><span class="line">   parent.init(<span class="number">10</span>)  </span><br><span class="line">   parent.merge(<span class="number">1</span>, <span class="number">2</span>)  </span><br><span class="line">   parent.merge(<span class="number">2</span>, <span class="number">3</span>)  </span><br><span class="line">   parent.merge(<span class="number">1</span>, <span class="number">3</span>)  </span><br><span class="line">   fmt.Println(parent.count())  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>数据结构&amp;算法</category>
-        <category>数据结构</category>
-        <category>并查集</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>算法</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>前缀树</title>
-    <url>/2022/07/27/%E5%89%8D%E7%BC%80%E6%A0%91/</url>
-    <content><![CDATA[<hr>
-<p>Trie，又称前缀树或字典树，是一棵有根树，其每个节点包含以下字段：</p>
-<p>指向子节点的指针数组 <code>children</code>。对于本题而言，数组长度为 26，即小写英文字母的数量。此时<code>children[0]</code> 对应小写字母 <code>a</code>，<code>children[1]</code> 对应小写字母 b，…，<code>children[25]</code> 对应小写字母 <code>z</code>。<br>布尔字段 <code>isEnd</code>，表示该节点是否为字符串的结尾。</p>
-<span id="more"></span>
-<!-- toc -->
-
-<h2 id="前缀树"><a href="#前缀树" class="headerlink" title="前缀树"></a>前缀树</h2><p><img src="/2022/07/27/%E5%89%8D%E7%BC%80%E6%A0%91/20220727155559.png"></p>
-<h2 id="golang实现"><a href="#golang实现" class="headerlink" title="golang实现"></a>golang实现</h2><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Trie <span class="keyword">struct</span> &#123;  </span><br><span class="line">   <span class="comment">// 26个子节点  </span></span><br><span class="line">   children [<span class="number">26</span>]*Trie  </span><br><span class="line">   <span class="comment">// 是否该节点结尾  </span></span><br><span class="line">   isEnd <span class="keyword">bool</span>  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Constructor</span><span class="params">()</span> <span class="title">Trie</span></span> &#123;  </span><br><span class="line">   <span class="keyword">return</span> Trie&#123;&#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 插入一个单词  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">Insert</span><span class="params">(word <span class="keyword">string</span>)</span></span>  &#123;  </span><br><span class="line">   node := t  </span><br><span class="line">   <span class="keyword">for</span> _, val := <span class="keyword">range</span> word &#123;  </span><br><span class="line">      pos := val - <span class="string">&#x27;a&#x27;</span>  </span><br><span class="line">      <span class="keyword">if</span> node.children[pos] == <span class="literal">nil</span> &#123;  </span><br><span class="line">         node.children[pos] = &amp;Trie&#123;&#125;  </span><br><span class="line">      &#125;  </span><br><span class="line">      node = node.children[pos]  </span><br><span class="line">   &#125;  </span><br><span class="line">   node.isEnd = <span class="literal">true</span>  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查询单词  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">SearchPrefixNode</span><span class="params">(prefix <span class="keyword">string</span>)</span> *<span class="title">Trie</span></span> &#123;  </span><br><span class="line">   node := t  </span><br><span class="line">   <span class="keyword">for</span> _, val := <span class="keyword">range</span> prefix &#123;  </span><br><span class="line">      pos := val - <span class="string">&#x27;a&#x27;</span>  </span><br><span class="line">      <span class="keyword">if</span> node.children[pos] == <span class="literal">nil</span> &#123;  </span><br><span class="line">         <span class="keyword">return</span> <span class="literal">nil</span>  </span><br><span class="line">      &#125;  </span><br><span class="line">      node = node.children[pos]  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> node  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查询是否存在这个单词  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">Search</span><span class="params">(word <span class="keyword">string</span>)</span> <span class="title">bool</span></span> &#123;  </span><br><span class="line">   node := t.SearchPrefixNode(word)  </span><br><span class="line">   <span class="keyword">return</span> node != <span class="literal">nil</span> &amp;&amp; node.isEnd  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">// 查询是否有这个前缀  </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Trie)</span> <span class="title">StartsWith</span><span class="params">(prefix <span class="keyword">string</span>)</span> <span class="title">bool</span></span> &#123;  </span><br><span class="line">   <span class="keyword">return</span> t.SearchPrefixNode(prefix) != <span class="literal">nil</span>  </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	myTrie := Constructor()</span><br><span class="line">	myTrie.Insert(<span class="string">&quot;&quot;</span>)</span><br><span class="line">	myTrie.Insert(<span class="string">&quot;affairs&quot;</span>)</span><br><span class="line">	myTrie.Insert(<span class="string">&quot;afraid&quot;</span>)</span><br><span class="line">	fmt.Println(myTrie.Search(<span class="string">&quot;&quot;</span>))        <span class="comment">// true</span></span><br><span class="line">	fmt.Println(myTrie.StartsWith(<span class="string">&quot;af&quot;</span>))  <span class="comment">// true</span></span><br><span class="line">	fmt.Println(myTrie.Search(<span class="string">&quot;affairs&quot;</span>)) <span class="comment">// true</span></span><br><span class="line">	fmt.Println(myTrie.Search(<span class="string">&quot;apple&quot;</span>))   <span class="comment">// false</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>数据结构&amp;算法</category>
-        <category>数据结构</category>
-        <category>前缀树</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>算法</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>一致性算法</title>
-    <url>/2022/07/28/%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<hr>
-<p>要解决数据不丢失的问题，只能通过数据冗余的方法，就算是数据分区，每个区也需要进行数据冗余处理。这就是数据副本。当出现某个节点的数据丢失时，可以从副本读到。数据副本是分布式系统解决数据丢失异常的唯一手段。<br>在数据副本的情况下，如何解决分布式数据一致性：</p>
-<span id="more"></span>
-<!-- toc -->
-
-<h2 id="一致性模型"><a href="#一致性模型" class="headerlink" title="一致性模型"></a>一致性模型</h2><ul>
-<li><strong>weak若一致性</strong>：当你写入一个新值后，读操作在数据副本上可能读出来，也可能读不出来。</li>
-<li><strong>Eventually最终一致性</strong>：当你写入一个新值后，有可能读不出来，但在某个时间窗口之后保证最终能读出来。</li>
-<li><strong>Strong强一致性</strong>：新的数据一旦写入，在任意副本任意时刻都能读到新值。</li>
-</ul>
-<h2 id="Basic-Paxos算法"><a href="#Basic-Paxos算法" class="headerlink" title="Basic Paxos算法"></a>Basic Paxos算法</h2><h3 id="决议的提出与批准"><a href="#决议的提出与批准" class="headerlink" title="决议的提出与批准"></a>决议的提出与批准</h3><ol>
-<li>prepare阶段：<ol>
-<li> proposer选择一个提案编号n并将prepare请求发送给acceptors中的一个多数派；</li>
-<li> acceptor收到prepare消息后，如果提案的编号大于它已经回复的所有prepare消息(回复消息表示接受accept)，则acceptor将自己上次接受的提案回复给proposer，并承诺不再回复小于n的提案；</li>
-</ol>
-</li>
-<li>批准阶段：<ol>
-<li> 当一个proposer收到了多数acceptors对prepare的回复后，就进入批准阶段。它要向回复prepare请求的acceptors发送accept请求，包括编号n和根据P2c决定的value（如果根据P2c没有已经接受的value，那么它可以自由决定value）。</li>
-<li> 在不违背自己向其他proposer的承诺的前提下，acceptor收到accept请求后即批准这个请求。</li>
-</ol>
-</li>
-</ol>
-<p>这个过程在任何时候中断都可以保证正确性。例如如果一个proposer发现已经有其他proposers提出了编号更高的提案，则有必要中断这个过程。因此为了优化，在上述prepare过程中，如果一个acceptor发现存在一个更高编号的提案，则需要通知proposer，提醒其中断这次提案。</p>
-<p>本质上就是一个这实际上退化为<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4" title="二阶段提交">二阶段提交</a>协议。</p>
-<h2 id="Multi-Paxos算法"><a href="#Multi-Paxos算法" class="headerlink" title="Multi-Paxos算法"></a>Multi-Paxos算法</h2><ul>
-<li>Basic Paxos</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Client   Proposer      Acceptor     Learner</span><br><span class="line">   |         |          |  |  |       |  | --- First Request ---</span><br><span class="line">   X--------&gt;|          |  |  |       |  |  Request</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Prepare(N)</span><br><span class="line">   |         |&lt;---------X--X--X       |  |  Promise(N,I,&#123;Va,Vb,Vc&#125;)</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Accept!(N,I,V)</span><br><span class="line">   |         |&lt;---------X--X--X------&gt;|-&gt;|  Accepted(N,I,V)</span><br><span class="line">   |&lt;---------------------------------X--X  Response</span><br><span class="line">   |         |          |  |  |       |  |</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>跳过阶段1时的Multi-Paxos</li>
-</ul>
-<p>在这种情况下，Basic Paxos的后续实例(由I+1表示)使用相同的Leader，因此，包含在Prepare和Promise的阶段1(Basic Paxos协议的这些后续实例)将被跳过。注意，这里要求Leader应该是稳定的，即它不应该崩溃或改变。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Client   Proposer       Acceptor     Learner</span><br><span class="line">   |         |          |  |  |       |  |  --- Following Requests ---</span><br><span class="line">   X--------&gt;|          |  |  |       |  |  Request</span><br><span class="line">   |         X---------&gt;|-&gt;|-&gt;|       |  |  Accept!(N,I+1,W)</span><br><span class="line">   |         |&lt;---------X--X--X------&gt;|-&gt;|  Accepted(N,I+1,W)</span><br><span class="line">   |&lt;---------------------------------X--X  Response</span><br><span class="line">   |         |          |  |  |       |  |</span><br></pre></td></tr></table></figure>
-
-<h2 id="Raft算法"><a href="#Raft算法" class="headerlink" title="Raft算法"></a>Raft算法</h2><p><strong>Raft</strong>是一种用于替代<a href="https://zh.wikipedia.org/wiki/Paxos" title="Paxos">Paxos</a>的<a href="https://zh.wikipedia.org/wiki/%E5%85%B1%E8%AD%98%E6%A9%9F%E5%88%B6" title="共识机制">共识</a>算法。相比于<a href="https://zh.wikipedia.org/wiki/Paxos" title="Paxos">Paxos</a>，Raft的目标是提供更清晰的逻辑分工使得算法本身能被更好地理解，同时它安全性更高，并能提供一些额外的特性。</p>
-<p><a href="https://thesecretlivesofdata.com/raft/">raft原理</a><br><a href="https://raft.github.io/">raft-github</a></p>
-<p>在Raft集群（英语：Raft cluster）里，服务器可能会是这三种身份其中一个：<strong>领袖</strong>（英语：leader）、<strong>追随者</strong>（英语：follower），或是<strong>候选人</strong>（英语：candidate）。在正常情况下只会有一个领袖，其他都是追随者。而领袖会负责所有外部的请求，如果不是领袖的机器收到时，请求会被导到领袖。</p>
-<p>通常领袖会借由固定时间发送消息，也就是“心跳（英语：heartbeat）”，让追随者知道集群的领袖还在运作。而每个追随者都会设计超时机制（英语：timeout），当超过一定时间没有收到心跳（通常是150 ms或300 ms，集群就会进入选举状态。</p>
-<h3 id="领袖选举"><a href="#领袖选举" class="headerlink" title="领袖选举"></a>领袖选举</h3><p>在起始算法或领袖死机、断线的时候，就需要选举出新的领袖。<br>此时集群进入新的任期（英语：term）并开始选举，如果选举成功则新的领袖开始执行工作，反之则视此任期终止，开始新的任期并开始下一场选举。</p>
-<p>选举是由候选人发动的。当领袖的心跳超时的时候，追随者就会把自己的任期编号（英语：term counter）加一、宣告竞选、投自己一票、并向其他服务器拉票。每个服务器在每个任期只会投一票，固定投给最早拉票的服务器。</p>
-<p>如果候选人收到其他候选人的拉票、而且拉票的任期编号不小于自己的任期编号，就会自认落选，成为追随者，并认定来拉票的候选人为领袖。如果有候选人收到过半的选票就当选为新的领袖。如果超时仍没有选出新领袖，此任期自动终止，开始新的任期并开始下一场选举。</p>
-<p>Raft每个服务器的超时期限是随机的，这降低伺服务同时竞选的几率，也降低因两个竞选人得票都不过半而选举失败的几率。</p>
-<h3 id="记录复写"><a href="#记录复写" class="headerlink" title="记录复写"></a>记录复写</h3><p>整个集群有个复写的状态机（英语：state machine），可执行外来的指令。领袖接收指令，将之写入自己记录中的新指令部分，然后把指令转发给追随者。如果有追随者没反应，领袖会不断重发指令、直到每个追随者都成功将新指令写入记录为止。</p>
-<p>当领袖收到过半追随者确认写入的消息，就会把指令视为已存储（英语：committed）。当追随者发现指令状态变成已存储，就会在其状态机上执行该指令。</p>
-]]></content>
-      <categories>
-        <category>分布式系统</category>
-        <category>一致性</category>
-      </categories>
-      <tags>
-        <tag>分布式</tag>
-        <tag>算法</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>分布式系统架构的本质</title>
-    <url>/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/</url>
-    <content><![CDATA[<hr>
-<h2 id="为什么需要分布式系统"><a href="#为什么需要分布式系统" class="headerlink" title="为什么需要分布式系统"></a>为什么需要分布式系统</h2><ul>
-<li>增大系统容量</li>
-<li>加强系统可用性<span id="more"></span>
-<!-- toc --></li>
-</ul>
-<p> <img src="/20220725195309.png"><br>也就是说，分布式系统架构的难点在于系统设计，以及管理和运维</p>
-<h3 id="SOA——基于服务的架构"><a href="#SOA——基于服务的架构" class="headerlink" title="SOA——基于服务的架构"></a>SOA——基于服务的架构</h3><p>SOA 架构是构造分布式计算应用程序的方法。它将应用程序功能作为服务发送给最终用户或者其他服务。<br>可重用，粒度合适，模块化，可组合，构件化以及有互操作性。符合开放标准（通用的或行业的）。服务的识别和分类，提供和发布，监控和跟踪。</p>
-<h2 id="分布式系统需要注意的问题"><a href="#分布式系统需要注意的问题" class="headerlink" title="分布式系统需要注意的问题"></a>分布式系统需要注意的问题</h2><h3 id="分布式系统中的不标准问题"><a href="#分布式系统中的不标准问题" class="headerlink" title="分布式系统中的不标准问题"></a>分布式系统中的不标准问题</h3><ul>
-<li>软件和应用不标准。</li>
-<li>通讯协议不标准。</li>
-<li>数据格式不标准。</li>
-<li>开发和运维的过程和方法不标准。</li>
-</ul>
-<h3 id="系统构架中的服务依赖性问题"><a href="#系统构架中的服务依赖性问题" class="headerlink" title="系统构架中的服务依赖性问题"></a>系统构架中的服务依赖性问题</h3><ul>
-<li>如果非关键业务被关键业务所依赖，会导致非关键业务变成一个关键业务。服务依赖</li>
-<li>服务依赖链中，出现“木桶短板效应”——整个 SLA 由最差的那个服务所决定。</li>
-</ul>
-<h3 id="故障发生概率更大"><a href="#故障发生概率更大" class="headerlink" title="故障发生概率更大"></a>故障发生概率更大</h3><p>在分布式系统中，因为使用的机器和服务会非常多，所以，故障发生的频率会比传统的单体应用更大。只不过，单体应用的故障影响面很大，而分布式系统中，虽然故障的影响面可以被隔离，但是因为机器和服务多，出故障的频率也会多。另一方面，因为管理复杂，而且没人知道整个架构中有什么，所以非常容易犯错误。</p>
-<h3 id="多层架构的运维复杂度更大"><a href="#多层架构的运维复杂度更大" class="headerlink" title="多层架构的运维复杂度更大"></a>多层架构的运维复杂度更大</h3><p>通常来说，我们可以把系统分成四层：</p>
-<ul>
-<li>基础层、平台层、应用层和接入层。基础层就是我们的机器、网络和存储设备等。</li>
-<li>平台层就是我们的中间件层，Tomcat、MySQL、Redis、Kafka 之类的软件。</li>
-<li>应用层就是我们的业务软件，比如，各种功能的服务。</li>
-<li>接入层就是接入用户请求的网关、负载均衡或是 CDN、DNS 这样的东西。</li>
-</ul>
-<h2 id="分布式系统的目的"><a href="#分布式系统的目的" class="headerlink" title="分布式系统的目的"></a>分布式系统的目的</h2><p>正如我们前面所说的，构建分布式系统的目的是增加系统容量，提高系统的可用性，转换成技术方面，也就是完成下面两件事。</p>
-<ul>
-<li>大流量处理：通过集群技术把大规模并发请求的负载分散到不同的机器上。</li>
-<li>关键业务保护：提高后台服务的可用性，把故障隔离起来阻止多米诺骨牌效应（雪崩效应）。如果流量过大，需要对业务降级，以保护关键业务流转。</li>
-</ul>
-<p>说白了就是干两件事。一是提高整体架构的吞吐量，服务更多的并发和流量，二是为了提高系统的稳定性，让系统的可用性更高。</p>
-<h3 id="提高架构的性能"><a href="#提高架构的性能" class="headerlink" title="提高架构的性能"></a>提高架构的性能</h3><p><img src="/20220725202848.png"></p>
-<ul>
-<li><strong>缓存系统</strong>：对于分布式系统下的缓存系统，需要的是一个缓存集群。这其中需要一个 Proxy 来做缓存的分片和路由。</li>
-<li><strong>负载均衡系统</strong>：负载均衡系统是水平扩展的关键技术，它可以使用多台机器来共同分担一部分流量请求。</li>
-<li><strong>异步调用</strong>：异步系统主要通过消息队列来对请求做排队处理，这样可以把前端的请求的峰值给“削平”了，而后端通过自己能够处理的速度来处理请求。这样可以增加系统的吞吐量，但是实时性就差很多了。同时，还会引入消息丢失的问题，所以要对消息做持久化，这会造成“有状态”的结点，从而增加了服务调度的难度。</li>
-<li><strong>数据分区和数据镜像</strong>：数据分区是把数据按一定的方式分成多个区；而数据镜像是把一个数据库镜像成多份一样的数据，这样就不需要数据路由的中间件了。初期一般采用读写分离的方式。</li>
-</ul>
-<h3 id="提高架构的稳定性"><a href="#提高架构的稳定性" class="headerlink" title="提高架构的稳定性"></a>提高架构的稳定性</h3><p><img src="/20220725203404.png"></p>
-<ul>
-<li><strong>服务拆分</strong>：1.隔离故障；2.重用服务模块（但是会带来服务调用见的依赖问题）</li>
-<li><strong>服务冗余</strong>：服务冗余是为了去除单点故障，并可以支持服务的弹性伸缩，以及故障迁移。</li>
-<li><strong>限流降级</strong>：当系统实在扛不住压力时，只能通过限流或者功能降级的方式来停掉一部分服务，或是拒绝一部分用户，以确保整个架构不会挂掉。</li>
-<li><strong>高可用架构</strong>：总之，就是为了不出单点故障。</li>
-<li><strong>高可用运维</strong>：高可用运维指的是 DevOps 中的 CI/CD（持续集成 / 持续部署）。</li>
-</ul>
-<h3 id="分布式服务的关键技术"><a href="#分布式服务的关键技术" class="headerlink" title="分布式服务的关键技术"></a>分布式服务的关键技术</h3><ul>
-<li><strong>服务治理</strong>：服务拆分、服务调用、服务发现、服务依赖、服务的关键度定义</li>
-<li><strong>构架软件管理</strong>: </li>
-<li><strong>DevOps</strong>:</li>
-<li><strong>自动化运维</strong>:</li>
-<li><strong>资源调度管理</strong></li>
-<li><strong>整体构架监控</strong></li>
-<li><strong>流量控制</strong><br>又可以分为：全栈系统监控，服务/资源调度，流量调度，状态/数据调度；开发和运维的自动化。</li>
-</ul>
-<h2 id="全栈系统监控"><a href="#全栈系统监控" class="headerlink" title="全栈系统监控"></a>全栈系统监控</h2><h3 id="多层监控"><a href="#多层监控" class="headerlink" title="多层监控"></a>多层监控</h3><ul>
-<li><strong>基础层</strong>：监控主机和底层资源。（cpu, 内存, 网络吞吐, 硬盘I/O, 硬盘使用）</li>
-<li><strong>中间层</strong>：中间件层的监控。(Nginx, Redis, MySQL, Kafka)</li>
-<li><strong>应用层</strong>：监控应用层的使用。（http访问吞吐量, 响应时间, 返回码）</li>
-</ul>
-<p>监控标准化: </p>
-<ul>
-<li>日志数据结构化</li>
-<li>监控数据格式化</li>
-<li>统一的监控平台</li>
-<li>统一的日志分析</li>
-</ul>
-<p>好的监控系统需要: </p>
-<ul>
-<li>服务调用链跟踪</li>
-<li>服务调用时长分布</li>
-<li>服务top n视图</li>
-<li>数据库操作关联</li>
-<li>服务资源跟踪</li>
-</ul>
-<h2 id="服务治理"><a href="#服务治理" class="headerlink" title="服务治理"></a>服务治理</h2><h3 id="服务关键程度和服务的依赖关系"><a href="#服务关键程度和服务的依赖关系" class="headerlink" title="服务关键程度和服务的依赖关系"></a>服务关键程度和服务的依赖关系</h3><p>微服务是服务依赖最优解的上限，而服务依赖的下限是千万不要有依赖环。如果系统架构中有服务依赖环，那么表明你的架构设计是错误的。循环依赖有很多的副作用，最大的问题是这是一种极强的耦合，会导致服务部署相当复杂和难解，而且会导致无穷尽的递归故障和一些你意想不到的问题。</p>
-<h3 id="服务状态和生命周期的管理"><a href="#服务状态和生命周期的管理" class="headerlink" title="服务状态和生命周期的管理"></a>服务状态和生命周期的管理</h3><p>我们还需要有一个<strong>服务发现的中间件</strong>，这个中间件是非常非常关键的。因为这个“架构城市”是非常动态的，有的服务会新加进来，有的会离开，有的会增加更多的实例，有的会减少，有的服务在维护过程中（发布、伸缩等），所以我们需要有一个服务注册中心，来知道这么几个事。</p>
-<h3 id="整个构架的版本管理"><a href="#整个构架的版本管理" class="headerlink" title="整个构架的版本管理"></a>整个构架的版本管理</h3><p>除了各个项目的版本管理之外，还需要在上面再盖一层版本管理。</p>
-<h3 id="资源-服务调度"><a href="#资源-服务调度" class="headerlink" title="资源/服务调度"></a>资源/服务调度</h3><h4 id="服务状态的维持和拟合"><a href="#服务状态的维持和拟合" class="headerlink" title="服务状态的维持和拟合"></a>服务状态的维持和拟合</h4><p>比如，当需要对集群进行 Scale 的时候，我们需要：<br>先扩展出几个结点；<br>再往上部署服务；<br>然后启动服务；<br>再检查服务的健康情况；<br>最后把新扩展出来的服务实例加入服务发现中提供服务。</p>
-<h4 id="服务的弹性伸缩和故障迁移"><a href="#服务的弹性伸缩和故障迁移" class="headerlink" title="服务的弹性伸缩和故障迁移"></a>服务的弹性伸缩和故障迁移</h4><p>两种故障迁移模式：</p>
-<ul>
-<li>宠物模式：就是一定要救活，主要是对于 stateful 的服务。</li>
-<li>奶牛模式：就是不用救活了，重新生成一个实例。</li>
-</ul>
-<h4 id="服务工作流和编排"><a href="#服务工作流和编排" class="headerlink" title="服务工作流和编排"></a>服务工作流和编排</h4><ul>
-<li>Choreography : 相互协作</li>
-<li>Orchestration : 指挥机制</li>
-<li>微服务: 消息队列来做编排</li>
-</ul>
-<h2 id="流量与数据调度"><a href="#流量与数据调度" class="headerlink" title="流量与数据调度"></a>流量与数据调度</h2><h3 id="主要功能："><a href="#主要功能：" class="headerlink" title="主要功能："></a>主要功能：</h3><ul>
-<li>依据系统运行的情况，自动地进行流量调度</li>
-<li>让系统应对爆品等突发事件时，在弹性计算扩缩容的较长时间窗口内或底层资源消耗殆尽的情况下，保护系统平稳运行。<br>还需完成：</li>
-<li>服务流控: 服务发现、服务路由、服务降级、服务熔断、服务保护等。</li>
-<li>流量控制: 负载均衡、流量分配、流量控制、异地灾备（多活）等。</li>
-<li>流量管理: 协议转换、请求校验、数据缓存、数据计算等。</li>
-</ul>
-<p>SLA：服务等级协议（简称：_SLA_，全称：_service level agreement_）<br>PaaS：是（_Platform as a Service_）的缩写，是指平台即服务。 把服务器平台作为一种服务提供的商业模式。<br>_IaaS_（Infrastructure as a Service），即基础设施即服务。</p>
-<h2 id="PaaS平台的本质"><a href="#PaaS平台的本质" class="headerlink" title="PaaS平台的本质"></a>PaaS平台的本质</h2><ul>
-<li>服务化是 PaaS 的本质。软件模块重用，服务治理，对外提供能力是 PaaS 的本质。</li>
-<li>分布式是 PaaS 的根本特性。多租户隔离、高可用、服务编排是 PaaS 的基本特性。</li>
-<li>自动化是 PaaS 的灵魂。自动化部署安装运维，自动化伸缩调度是 PaaS 的关键。</li>
-</ul>
-<p>总结一下，一个完整的 PaaS 平台会包括以下几部分。</p>
-<ul>
-<li>PaaS 调度层 – 主要是 PaaS 的自动化和分布式对于高可用高性能的管理。</li>
-<li>PaaS 能力服务层 – 主要是 PaaS 真正提供给用户的服务和能力。</li>
-<li>PaaS 的流量调度 – 主要是与流量调度相关的东西，包括对高并发的管理。</li>
-<li>PaaS 的运营管理 – 软件资源库、软件接入、认证和开放平台门户。PaaS 的运维管理 – 主要是 DevOps 相关的东西。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>分布式系统</category>
-        <category>总述</category>
-      </categories>
-      <tags>
-        <tag>分布式</tag>
       </tags>
   </entry>
 </search>
