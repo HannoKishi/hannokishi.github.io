@@ -821,6 +821,8 @@ New () 函数返回一个错误，该错误的格式为给定的文本。<br>即
 <p><strong>总结</strong>：所以<code>unsafe.Pointer</code>做的主要是用来进行桥接，用于不同类型的指针进行互相转换。</p>
 <h3 id="unsafe-Pointer-uintptr与普通指针的互相转换"><a href="#unsafe-Pointer-uintptr与普通指针的互相转换" class="headerlink" title="unsafe.Pointer,uintptr与普通指针的互相转换"></a>unsafe.Pointer,uintptr与普通指针的互相转换</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> f <span class="keyword">float64</span> = <span class="number">1.0</span></span><br><span class="line">fmt.Println(Float64bits(f))</span><br><span class="line"><span class="comment">// 4607182418800017408</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Float64bits</span><span class="params">(f <span class="keyword">float64</span>)</span> <span class="title">uint64</span></span> &#123;</span><br><span class="line">	<span class="comment">// (*uint64*) 转换成uint64指针 在*号取值</span></span><br><span class="line">    <span class="keyword">return</span> *((*<span class="keyword">uint64</span>)(unsafe.Pointer(&amp;f)))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<h4 id="unsafe-Pointer的应用：string强制转换-byte"><a href="#unsafe-Pointer的应用：string强制转换-byte" class="headerlink" title="unsafe.Pointer的应用：string强制转换[]byte"></a>unsafe.Pointer的应用：string强制转换[]byte</h4><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">String2Bytes</span><span class="params">(s <span class="keyword">string</span>)</span> []<span class="title">byte</span></span> &#123;</span><br><span class="line">    sh := (*reflect.StringHeader)(unsafe.Pointer(&amp;s))</span><br><span class="line">    bh := reflect.SliceHeader&#123;</span><br><span class="line">        Data: sh.Data,</span><br><span class="line">        Len:  sh.Len,</span><br><span class="line">        Cap:  sh.Len,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> *(*[]<span class="keyword">byte</span>)(unsafe.Pointer(&amp;bh))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Bytes2String</span><span class="params">(b []<span class="keyword">byte</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> *(*<span class="keyword">string</span>)(unsafe.Pointer(&amp;b))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h2 id="go中常用的常量"><a href="#go中常用的常量" class="headerlink" title="go中常用的常量"></a>go中常用的常量</h2><ul>
 <li><strong>^uintptr(0)</strong>:<ul>
 <li>math.MaxUint64</li>
@@ -1901,6 +1903,21 @@ libevent事件管理的结构，左侧红色部分表示I/O事件和signal的结
 <li>PaaS 的流量调度 – 主要是与流量调度相关的东西，包括对高并发的管理。</li>
 <li>PaaS 的运营管理 – 软件资源库、软件接入、认证和开放平台门户。PaaS 的运维管理 – 主要是 DevOps 相关的东西。</li>
 </ul>
+<h2 id="CAP定理"><a href="#CAP定理" class="headerlink" title="CAP定理"></a>CAP定理</h2><p>分布式数据存储不可能同时满足以下三个条件。</p>
+<ul>
+<li>一致性（Consistency）：每次读取要么获得最近写入的数据，要么获得一个错误。(CAP 定理中的一致性与 ACID 数据库事务中的一致性截然不同)</li>
+<li>可用性（Availability）：每次请求都能获得一个（非错误）响应，但不保证返回的是最新写入的数据。</li>
+<li>分区容忍（Partition tolerance）：尽管任意数量的消息被节点间的网络丢失（或延迟），系统仍继续运行。<br><img src="/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/20221024193306.png"><br>两两组合：</li>
+<li>CA (consistency + availability)，这样的系统关注一致性和可用性，它需要非常严格的全体一致的协议，比如“两阶段提交”（2PC）。</li>
+<li>CP (consistency + partition tolerance)，这样的系统关注一致性和分区容忍性。它关注的是系统里大多数人的一致性协议，比如：Paxos 算法（Quorum 类的算法）。这样的系统只需要保证大多数结点数据一致，而少数的结点会在没有同步到最新版本的数据时变成不可用的状态。这样能够提供一部分的可用性。</li>
+<li>AP (availability + partition tolerance)，这样的系统关心可用性和分区容忍性。因此，这样的系统不能达成一致性，需要给出数据冲突，给出数据冲突就需要维护数据版本。Dynamo 就是这样的系统。</li>
+</ul>
+<h2 id="向量时钟算法"><a href="#向量时钟算法" class="headerlink" title="向量时钟算法"></a>向量时钟算法</h2><h3 id="Lamport-向量时钟"><a href="#Lamport-向量时钟" class="headerlink" title="Lamport 向量时钟"></a>Lamport 向量时钟</h3><ol>
+<li> 每个事件对应一个Lamport时间戳，初始值为0</li>
+<li> 如果事件在节点内发生，本地进程中的时间戳加1</li>
+<li> 如果事件属于发送事件，本地进程中的时间戳加1并在消息中带上该时间戳</li>
+<li> 如果事件属于接收事件，本地进程中的时间戳 = Max(本地时间戳，消息中的时间戳) + 1<br><img src="/2022/08/06/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%AC%E8%B4%A8/20221107195623.png"><br>对于C(a) = C(b)的情况，可以用进程号来排序。<br>Lamport逻辑时钟是一个正确的算法，即有因果关系的事件时序不会错，但并不是一个公平的算法，即没有因果关系的事件时序不一定符合实际情况（例如B5&lt;A3）。</li>
+</ol>
 ]]></content>
       <categories>
         <category>分布式系统</category>
